@@ -22,7 +22,7 @@ class InvitationService {
       to: from,
       from: candidate._id,
       createdAt: {
-        $lt: new Date(Date.now() - config.invitation_expires_at),
+        $lt: new Date(Date.now() - config.invitation_expire_limit),
       },
     });
 
@@ -51,7 +51,7 @@ class InvitationService {
     const invitation = await Invitation.findOne({
       _id: invitation_id,
       createdAt: {
-        $lt: new Date(Date.now() - config.invitation_expires_at),
+        $lt: new Date(Date.now() - config.invitation_expire_limit),
       },
     })
       .populate("to", "email login _id")

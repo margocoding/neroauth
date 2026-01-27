@@ -7,6 +7,7 @@ import { randomInt } from "node:crypto";
 import invitationService from "./invitation.service.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
 import config from "../../config/config.js";
+import type { IUser } from "../user/user.model.js";
 
 const mockedUserService = {
   findUserByCode: jest.spyOn(userService, "findUserByCode"),
@@ -16,7 +17,7 @@ const mockedUserService = {
 const mockedInvitation = {
   findOne: jest.spyOn(Invitation, "findOne"),
   create: jest.spyOn(Invitation, "create"),
-  populate: jest.spyOn(Invitation.prototype, "populate"),
+  populate: jest.fn(),
 };
 
 const mockedMailService = {
@@ -54,6 +55,8 @@ describe("InvitationService", () => {
       } as any);
       mockedMailService.sendMail.mockResolvedValue({ success: true });
 
+      jest.spyOn(Date, "now").mockReturnValue(randomInt(100000000000000));
+
       const result = await invitationService.createInvitation(
         generatedInitiator._id,
         generatedCandidate.code,
@@ -67,7 +70,7 @@ describe("InvitationService", () => {
         to: generatedInitiator._id,
         from: generatedCandidate._id,
         createdAt: {
-          $lt: new Date(Date.now() - config.invitation_expires_at),
+          $lt: new Date(Date.now() - config.invitation_expire_limit),
         },
       });
       expect(mockedInvitation.create).toHaveBeenCalledWith({
@@ -89,6 +92,8 @@ describe("InvitationService", () => {
       mockedUserService.addFriend.mockResolvedValue({ success: true });
       mockedMailService.sendMail.mockResolvedValue({ success: true });
 
+      jest.spyOn(Date, "now").mockReturnValue(randomInt(100000000000000));
+
       const result = await invitationService.createInvitation(
         generatedInitiator._id,
         generatedCandidate.code,
@@ -102,12 +107,12 @@ describe("InvitationService", () => {
         to: generatedInitiator._id,
         from: generatedCandidate._id,
         createdAt: {
-          $lt: new Date(Date.now() - config.invitation_expires_at),
+          $lt: new Date(Date.now() - config.invitation_expire_limit),
         },
       });
       expect(mockedUserService.addFriend).toHaveBeenCalledWith(
-        generatedInitiator._id,
         generatedCandidate._id,
+        generatedInitiator._id,
       );
       expect(mockedMailService.sendMail).toHaveBeenCalled();
     });
@@ -132,15 +137,27 @@ describe("InvitationService", () => {
   describe("Apply an invitation", () => {
     it("Should successfully apply an invite", async () => {
       const _id = new Types.ObjectId();
-      mockedInvitation.populate.mockResolvedValue({
+
+      mockedInvitation.findOne.mockReturnValue({
         _id,
-        from: generatedInitiator,
-        to: generatedCandidate,
-      } as any);
-      mockedInvitation.findOne.mockResolvedValue({
-        _id,
-        from: generatedInitiator,
-        to: generatedCandidate,
+        from: generatedInitiator._id,
+        to: generatedCandidate._id,
+        populate: function () {
+          return this;
+        },
+        then: function (
+          resolve: (data: {
+            _id: Types.ObjectId;
+            to: { _id: Types.ObjectId };
+            from: { _id: Types.ObjectId };
+          }) => void,
+        ) {
+          return resolve({
+            _id,
+            to: generatedCandidate,
+            from: generatedInitiator,
+          });
+        },
       } as any);
 
       mockedInvitationService.processApplyingInvitation.mockResolvedValue({
@@ -153,7 +170,7 @@ describe("InvitationService", () => {
       expect(mockedInvitation.findOne).toHaveBeenCalledWith({
         _id,
         createdAt: {
-          $lt: new Date(Date.now() - config.invitation_expires_at),
+          $lt: new Date(Date.now() - config.invitation_expire_limit),
         },
       });
       expect(

@@ -11,3 +11,8 @@ invitationRouter.post(
   authMiddleware,
   invitationController.createInvitation,
 );
+invitationRouter.post(
+  "/apply/:id",
+  authMiddleware,
+  invitationController.createInvitation,
+);

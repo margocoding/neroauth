@@ -1,15 +1,20 @@
 import express from "express";
-import config from "./config/config.js";
-import mongoose from "mongoose";
-import { userRouter } from "./modules/user/user.router.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import { authRouter } from "./modules/auth/auth.router.js";
 import { invitationRouter } from "./modules/invitation/invitation.router.js";
+import { userRouter } from "./modules/user/user.router.js";
+import { Redis } from "ioredis";
+import config from "./config/config.js";
 
 export const app = express();
+
+export const redis = new Redis({
+  host: config.redis_host,
+  port: config.redis_port,
+});
 
 app.use(express.json());
 app.use("/user", userRouter);
 app.use("/auth", authRouter);
-app.use('/invitation', invitationRouter)
+app.use("/invitation", invitationRouter);
 app.use(errorMiddleware);

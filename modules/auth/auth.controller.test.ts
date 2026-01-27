@@ -40,26 +40,26 @@ describe("AuthController", () => {
     });
   });
 
-  describe('Login', () => {
-    it('Should return 400 status code if request body is empty', async () => {
-        const response = await request(app).post('/auth/login');
+  describe("Login", () => {
+    it("Should return 400 status code if request body is empty", async () => {
+      const response = await request(app).post("/auth/login");
 
-        expect(response.status).toBe(400);
+      expect(response.status).toBe(400);
     });
 
-    it('Should throw an error if each of fields are not string', async () => {
-        const response = await request(app).post('/auth/login').send({
-            login: 123123.23,
-            password: 'soankn13209gasd'
-        });
+    it("Should throw an error if each of fields are not string", async () => {
+      const response = await request(app).post("/auth/login").send({
+        login: 123123.23,
+        password: "soankn13209gasd",
+      });
 
-        expect(response.status).toBe(400);
-        expect(response.body.errors).toContainEqual(
-            expect.objectContaining({
-                path: 'login',
-                location: 'body'
-            })
-        )
-    })
-  })
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          path: "login",
+          location: "body",
+        }),
+      );
+    });
+  });
 });

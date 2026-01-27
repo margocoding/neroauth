@@ -7,6 +7,7 @@ import userService from "../user/user.service.js";
 import authService from "./auth.service.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
 import { randomInt } from "node:crypto";
+import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
 
 const mockedBcrypt = {
   hash: jest.spyOn<typeof bcrypt, "hash", () => Promise<string>>(
@@ -33,21 +34,31 @@ const mockedAuthService = {
     authService,
     "generateToken",
   ),
+  verifyCode: jest.spyOn<
+    typeof authService,
+    "verifyCode",
+    () => Promise<SuccessRdo>
+  >(authService, "verifyCode"),
 };
 
 describe("AuthService", () => {
-  const generatedUserData = {
-    _id: new Types.ObjectId(),
+  const dto = {
+    code: randomInt(1000000),
     login: "test-login",
     email: "test@test.org",
-    code: randomInt(100000000),
     password: "some password",
-    friends: []
+  };
+  const generatedUserData = {
+    _id: new Types.ObjectId(),
+    inviteCode: randomInt(1000000),
+    friends: [],
+    ...dto,
   };
   const generatedJwt = "token";
   const generatedHash = "Generated hash";
-  describe("Sign up", () => {
+  describe("Register", () => {
     it("Should successfully sign up and return user with token", async () => {
+      mockedAuthService.verifyCode.mockResolvedValue({ success: true });
       const generatedSalt = "Generated salt";
 
       mockedBcrypt.genSalt.mockResolvedValue(generatedSalt);
@@ -59,7 +70,7 @@ describe("AuthService", () => {
       });
       mockedAuthService.generateToken.mockReturnValue(generatedJwt);
 
-      const result = authService.register(generatedUserData);
+      const result = authService.register(dto);
 
       await expect(result).resolves.toEqual({
         user: { ...generatedUserData, password: generatedHash },
@@ -71,16 +82,28 @@ describe("AuthService", () => {
         generatedSalt,
       );
       expect(mockedUserService.createUser).toHaveBeenCalledWith({
-        ...generatedUserData,
+        ...dto,
         password: generatedHash,
       });
       expect(mockedAuthService.generateToken).toHaveBeenCalledWith(
         generatedUserData._id,
       );
     });
+
+    it("Should throw an error if code is not verified", async () => {
+      mockedAuthService.verifyCode.mockResolvedValue({ success: false });
+
+      const result = authService.register(dto);
+
+      await expect(result).rejects.toThrow(HttpError.BadRequest("Wrong code"));
+      expect(mockedAuthService.verifyCode).toHaveBeenCalledWith(
+        generatedUserData.email,
+        generatedUserData.code,
+      );
+    });
   });
 
-  describe("Sign in", () => {
+  describe("Login", () => {
     it("Should successfully sign in and return user with token", async () => {
       mockedUserService.findUserByLogin.mockResolvedValue({
         ...generatedUserData,
@@ -90,7 +113,7 @@ describe("AuthService", () => {
       mockedBcrypt.compare.mockResolvedValue(true);
       mockedAuthService.generateToken.mockReturnValue(generatedJwt);
 
-      const result = authService.login(generatedUserData);
+      const result = authService.login(dto);
 
       await expect(result).resolves.toEqual({
         user: { ...generatedUserData, password: generatedHash },
@@ -111,7 +134,7 @@ describe("AuthService", () => {
     it("Should throw an error if user not found", async () => {
       mockedUserService.findUserByLogin.mockResolvedValue(null);
 
-      const result = authService.login(generatedUserData);
+      const result = authService.login(dto);
 
       await expect(result).rejects.toThrow(
         HttpError.Unauthorized("Wrong login or password"),
@@ -128,7 +151,7 @@ describe("AuthService", () => {
       });
       mockedBcrypt.compare.mockResolvedValue(false);
 
-      const result = authService.login(generatedUserData);
+      const result = authService.login(dto);
 
       await expect(result).rejects.toThrow(
         HttpError.Unauthorized("Wrong login or password"),
