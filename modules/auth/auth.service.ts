@@ -1,20 +1,20 @@
-import type { CreateUserDto } from "../user/dto/create-user.dto.js";
 import bcrypt from "bcrypt";
-import userService from "../user/user.service.js";
 import jwt from "jsonwebtoken";
-import config from "../../config/config.js";
-import type { LoginDto } from "./dto/login.dto.js";
-import HttpError from "../../utils/exceptions/HttpError.js";
-import type { RegisterDto } from "./dto/register.dto.js";
 import type { Types } from "mongoose";
 import { randomInt } from "node:crypto";
-import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
 import { redis } from "../../app.js";
+import config from "../../config/config.js";
+import HttpError from "../../utils/exceptions/HttpError.js";
+import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
 import mailService from "../mail/mail.service.js";
+import { UserRdo } from "../user/rdo/user.rdo.js";
+import userService from "../user/user.service.js";
+import type { LoginDto } from "./dto/login.dto.js";
+import type { RegisterDto } from "./dto/register.dto.js";
 
 class AuthService {
-  async register(data: RegisterDto) {
-    const { success } = await this.verifyCode(data.email, data.code);
+  async register({ code, ...data }: RegisterDto) {
+    const { success } = await this.verifyCode(data.email, code);
 
     if (!success) {
       throw HttpError.BadRequest("Wrong code");
@@ -29,7 +29,9 @@ class AuthService {
     });
     const token = this.generateToken(user._id);
 
-    return { user, token };
+    await redis.del(`auth-code:${user.email}`);
+
+    return { user: new UserRdo(user), token };
   }
 
   async login({ login, password }: LoginDto) {
@@ -48,7 +50,7 @@ class AuthService {
     const token = this.generateToken(user._id);
 
     return {
-      user,
+      user: new UserRdo(user),
       token,
     };
   }
@@ -109,8 +111,6 @@ class AuthService {
       ) {
         throw HttpError.BadRequest("Code has already expired");
       }
-
-      await redis.del(`auth-code:${email}`);
 
       return { success: true };
     } catch (e) {

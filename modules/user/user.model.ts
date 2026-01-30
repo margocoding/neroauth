@@ -1,4 +1,4 @@
-import { Document, model, Schema, Types } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 import { randomInt } from "node:crypto";
 
 export interface IUser {
@@ -7,7 +7,7 @@ export interface IUser {
   password: string;
   email: string;
   inviteCode: number;
-  friends: IUser[];
+  friends: Array<IUser | Types.ObjectId>;
 }
 
 const userSchema = new Schema<IUser>({

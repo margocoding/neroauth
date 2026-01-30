@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  backend:
+    build: ./
+    container_name: neroauth_api
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+  db:
+    image: postgres:15-alpine
+    container_name: bro_crypto_db
+    restart: always
+    environment:
+      POSTGRES_USER: mig_owner
+      POSTGRES_PASSWORD: 01u71NbSGj8DlRZEBzc42x7aoMbV05mcf3L13
+      POSTGRES_DB: fotomig
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

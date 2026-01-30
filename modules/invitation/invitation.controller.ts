@@ -4,6 +4,7 @@ import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
 import type { CreateInvitationDto } from "./dto/create-invitation.dto.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
 import { Types } from "mongoose";
+import type { InvitationType } from "./dto/fetch-invitations.dto.js";
 
 class InvitationController {
   async createInvitation(
@@ -26,6 +27,19 @@ class InvitationController {
 
     const result = await invitationService.applyInvitation(
       new Types.ObjectId(req.params.id as string),
+    );
+
+    return res.json(result);
+  }
+
+  async fetchInvitations(req: Request, res: Response) {
+    if (!req.user) throw HttpError.Unauthorized();
+
+    const result = await invitationService.fetchInvintations(
+      req.user._id,
+      req.query.type as InvitationType,
+      +(req.query.page || 1),
+      +(req.query.pageSize || 15),
     );
 
     return res.json(result);
