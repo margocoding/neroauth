@@ -59,4 +59,8 @@ describe("UserService", () => {
       });
     });
   });
+
+  describe("Fetch a user", () => {
+    it("Should successfully fetch a user", async () => {});
+  });
 });

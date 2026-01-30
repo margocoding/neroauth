@@ -13,7 +13,7 @@ class UserService {
     if (userWithSameData && userWithSameData.email === dto.email) {
       throw HttpError.BadRequest("User with this email is already existing");
     } else if (userWithSameData && userWithSameData.login === dto.login) {
-        throw HttpError.BadRequest('User with this login is already existing');
+      throw HttpError.BadRequest("User with this login is already existing");
     }
 
     const user = new User(dto);
@@ -21,38 +21,65 @@ class UserService {
     return await user.save();
   }
 
-  async fetchFriends(_id: string): Promise<IUser[]> {
-    const user = await User.findOne({_id}).populate('friends', '_id login');
+  async fetchFriends(
+    _id: Types.ObjectId,
+    page: number = 1,
+    pageSize: number = 15,
+  ): Promise<IUser[]> {
+    const user = await User.findOne({ _id })
+      .populate("friends", "_id login")
+      .skip((page - 1) * pageSize)
+      .limit(pageSize);
 
-    return user?.friends || [];
+    return (user?.friends as IUser[]) || [];
+  }
+
+  async deleteFriend(
+    user_id: Types.ObjectId,
+    friend_id: Types.ObjectId,
+  ): Promise<SuccessRdo> {
+    try {
+      await Promise.all([
+        User.updateOne({ _id: user_id }, { $pull: { friends: friend_id } }),
+        User.updateOne({ _id: friend_id }, { $pull: { friends: user_id } }),
+      ]);
+
+      return { success: true };
+    } catch (e) {
+      console.error("Cannot delete a friend", e);
+      throw HttpError.NotFound("Friend not found");
+    }
   }
 
   async fetchUserById(_id: Types.ObjectId): Promise<IUser> {
-    const user = await User.findOne({_id});
+    const user = await User.findOne({ _id });
 
-    if(!user) {
-        throw HttpError.NotFound('User not found');
+    if (!user) {
+      throw HttpError.NotFound("User not found");
     }
 
     return user;
   }
 
   async findUserByLogin(login: string): Promise<IUser | null> {
-    return User.findOne({login});
+    return User.findOne({ login });
   }
 
   async findUserByCode(code: number): Promise<IUser | null> {
-    return User.findOne({code});
+    return User.findOne({ inviteCode: code });
   }
 
-  async addFriend(_id: Types.ObjectId, friend_id: Types.ObjectId): Promise<SuccessRdo> {
+  async addFriend(
+    _id: Types.ObjectId,
+    friend_id: Types.ObjectId,
+  ): Promise<SuccessRdo> {
     await Promise.all([
-      User.updateOne({_id}, {friends: {$addToSet: friend_id}}),
-      User.updateOne({_id: friend_id}, {friends: {$addToSet: _id}})
-    ])
+      User.updateOne({ _id }, { $addToSet: { friends: friend_id } }),
+      User.updateOne({ _id: friend_id }, { $addToSet: { friends: _id } }),
+    ]);
 
-    return {success: true}
-  } 
+    return { success: true };
+  }
 }
 
 export default new UserService();
