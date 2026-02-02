@@ -15,6 +15,17 @@ class AuthController {
     return res.json(result);
   }
 
+  async checkUserByEmail(
+    req: Request,
+    res: Response,
+  ): Promise<Response<SuccessRdo>> {
+    const result = await authService.checkUserByEmail(
+      req.query.email as string,
+    );
+
+    return res.json(result);
+  }
+
   async createCode(req: Request, res: Response): Promise<Response<SuccessRdo>> {
     const result = await authService.createCode(req.body.email);
 

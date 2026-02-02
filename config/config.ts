@@ -14,6 +14,7 @@ const config = {
   smtp_password: process.env.SMTP_PASSWORD,
   redis_host: process.env.REDIS_HOST || "localhost",
   redis_port: +(process.env.REDIS_PORT || 6379),
+  node_env: process.env.NODE_ENV || "development",
 };
 
 export default config;

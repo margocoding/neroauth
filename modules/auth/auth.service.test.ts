@@ -8,6 +8,7 @@ import authService from "./auth.service.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
 import { randomInt } from "node:crypto";
 import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
+import { UserRdo } from "../user/rdo/user.rdo.js";
 
 const mockedBcrypt = {
   hash: jest.spyOn<typeof bcrypt, "hash", () => Promise<string>>(
@@ -73,7 +74,7 @@ describe("AuthService", () => {
       const result = authService.register(dto);
 
       await expect(result).resolves.toEqual({
-        user: { ...generatedUserData, password: generatedHash },
+        user: new UserRdo({ ...generatedUserData, password: generatedHash }),
         token: generatedJwt,
       });
       expect(mockedBcrypt.genSalt).toHaveBeenCalledWith(10, "a");
@@ -83,6 +84,7 @@ describe("AuthService", () => {
       );
       expect(mockedUserService.createUser).toHaveBeenCalledWith({
         ...dto,
+        code: undefined,
         password: generatedHash,
       });
       expect(mockedAuthService.generateToken).toHaveBeenCalledWith(
@@ -116,7 +118,7 @@ describe("AuthService", () => {
       const result = authService.login(dto);
 
       await expect(result).resolves.toEqual({
-        user: { ...generatedUserData, password: generatedHash },
+        user: new UserRdo({ ...generatedUserData, password: generatedHash }),
         token: generatedJwt,
       });
       expect(mockedBcrypt.compare).toHaveBeenCalledWith(

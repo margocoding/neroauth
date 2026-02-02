@@ -11,12 +11,12 @@ const mockedUser = {
 };
 
 describe("UserService", () => {
+  const data: CreateUserDto = {
+    email: "test@test.com",
+    login: "testing",
+    password: "testing",
+  };
   describe("Create a user", () => {
-    const data: CreateUserDto = {
-      email: "test@test.com",
-      login: "testing",
-      password: "testing",
-    };
 
     it("Should successfully create a user", async () => {
       mockedUser.findOne.mockResolvedValue(null);
@@ -60,7 +60,15 @@ describe("UserService", () => {
     });
   });
 
-  describe("Fetch a user", () => {
-    it("Should successfully fetch a user", async () => {});
+  describe("Fetch user by id", () => {
+    it("Should successfully fetch a user", async () => {
+      mockedUser.findOne.mockResolvedValue(data as any);
+      const randomId = new Types.ObjectId();
+
+      const result = userService.fetchUserById(randomId);
+
+      await expect(result).resolves.toEqual(data);
+      expect(mockedUser.findOne).toHaveBeenCalledWith({_id: randomId});
+    });
   });
 });

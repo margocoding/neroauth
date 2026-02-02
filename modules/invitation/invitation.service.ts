@@ -21,7 +21,7 @@ class InvitationService {
     }
 
     if (candidate.friends.find((friend) => friend === from)) {
-      throw HttpError.BadRequest("You are already ");
+      throw HttpError.BadRequest("You are already a friend");
     }
 
     const invitationFromCandidate = await Invitation.findOne({
@@ -99,14 +99,14 @@ class InvitationService {
     candidateEmail: string,
     candidateLogin: string,
   ): Promise<SuccessRdo> {
-    await Promise.all([
+    await Promise.allSettled([
       userService.addFriend(from, to),
       mailService.sendMail(
         candidateEmail,
         "New friend",
         `${candidateLogin} has applied your invitation`,
       ),
-      Invitation.deleteOne({ where: { from, to } }),
+      Invitation.deleteOne({ from, to }),
     ]);
 
     return { success: true, message: "Friend is successfully added" };

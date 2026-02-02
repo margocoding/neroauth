@@ -80,6 +80,10 @@ class UserService {
 
     return { success: true };
   }
+
+  async fetchUserByEmail(email: string): Promise<IUser | null> {
+    return User.findOne({ email });
+  }
 }
 
 export default new UserService();
