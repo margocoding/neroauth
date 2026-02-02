@@ -34,8 +34,8 @@ class AuthService {
     return { user: new UserRdo(user), token };
   }
 
-  async login({ login, password }: LoginDto) {
-    const user = await userService.findUserByLogin(login);
+  async login({ email, password }: LoginDto) {
+    const user = await userService.fetchUserByEmail(email);
 
     if (!user) {
       throw HttpError.Unauthorized("Wrong login or password");
@@ -53,6 +53,18 @@ class AuthService {
       user: new UserRdo(user),
       token,
     };
+  }
+
+  async checkUserByEmail(email: string): Promise<SuccessRdo> {
+    try {
+      const user = await userService.fetchUserByEmail(email);
+
+      if (!user) return { success: false };
+
+      return { success: true };
+    } catch (e) {
+      return { success: false };
+    }
   }
 
   async createCode(email: string): Promise<SuccessRdo> {

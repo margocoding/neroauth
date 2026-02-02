@@ -17,6 +17,7 @@ const mockedUserService = {
 const mockedInvitation = {
   findOne: jest.spyOn(Invitation, "findOne"),
   create: jest.spyOn(Invitation, "create"),
+  deleteOne: jest.spyOn(Invitation, "deleteOne"),
   populate: jest.fn(),
 };
 
@@ -37,9 +38,11 @@ describe("InvitationService", () => {
     login: "test",
     email: "test@test.com",
     code: randomInt(10000000),
+    friends: [],
   };
   const generatedInitiator = {
     _id: new Types.ObjectId(),
+    friends: [],
   };
   describe("Create an invite", () => {
     it("Should successfully create an invitation", async () => {
@@ -92,7 +95,11 @@ describe("InvitationService", () => {
       mockedUserService.addFriend.mockResolvedValue({ success: true });
       mockedMailService.sendMail.mockResolvedValue({ success: true });
 
-      jest.spyOn(Date, "now").mockReturnValue(randomInt(100000000000000));
+      jest.spyOn(Date, "now").mockReturnValue(randomInt(1000000000));
+
+      mockedInvitationService.processApplyingInvitation.mockResolvedValue({
+        success: true,
+      });
 
       const result = await invitationService.createInvitation(
         generatedInitiator._id,
@@ -110,11 +117,14 @@ describe("InvitationService", () => {
           $lt: new Date(Date.now() - config.invitation_expire_limit),
         },
       });
-      expect(mockedUserService.addFriend).toHaveBeenCalledWith(
+      expect(
+        mockedInvitationService.processApplyingInvitation,
+      ).toHaveBeenCalledWith(
         generatedCandidate._id,
         generatedInitiator._id,
+        generatedCandidate.email,
+        generatedCandidate.login,
       );
-      expect(mockedMailService.sendMail).toHaveBeenCalled();
     });
 
     it("Should throw an error if this code is not existing", async () => {
@@ -169,9 +179,6 @@ describe("InvitationService", () => {
       expect(result.success).toBeTruthy();
       expect(mockedInvitation.findOne).toHaveBeenCalledWith({
         _id,
-        createdAt: {
-          $lt: new Date(Date.now() - config.invitation_expire_limit),
-        },
       });
       expect(
         mockedInvitationService.processApplyingInvitation,
@@ -181,6 +188,35 @@ describe("InvitationService", () => {
         generatedCandidate.email,
         generatedCandidate.login,
       );
+    });
+  });
+
+  describe("Process an invitation", () => {
+    it("Should successfully proccess an invitation", async () => {
+      mockedUserService.addFriend.mockResolvedValue({ success: true });
+      mockedMailService.sendMail.mockResolvedValue({ success: true });
+      mockedInvitation.deleteOne.mockResolvedValue({
+        acknowledged: true,
+        deletedCount: 1,
+      });
+
+      const result = await invitationService.processApplyingInvitation(
+        generatedInitiator._id,
+        generatedCandidate._id,
+        generatedCandidate.email,
+        generatedCandidate.login,
+      );
+
+      expect(result.success).toBeTruthy();
+      expect(mockedUserService.addFriend).toHaveBeenCalledWith(
+        generatedInitiator._id,
+        generatedCandidate._id,
+      );
+      expect(mockedMailService.sendMail).toHaveBeenCalled();
+      expect(mockedInvitation.deleteOne).toHaveBeenCalledWith({
+        from: generatedInitiator._id,
+        to: generatedCandidate._id,
+      });
     });
   });
 });
