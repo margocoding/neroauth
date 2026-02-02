@@ -24,6 +24,14 @@ class InvitationService {
       throw HttpError.BadRequest("You are already a friend");
     }
 
+    const invitationFromInitiator = await Invitation.findOne({
+      from,
+      to: candidate._id,
+    });
+
+    if (invitationFromInitiator)
+      throw HttpError.BadRequest("You have already had an invitation");
+
     const invitationFromCandidate = await Invitation.findOne({
       to: from,
       from: candidate._id,

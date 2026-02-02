@@ -16,7 +16,7 @@ userRouter.get(
 );
 userRouter.get("/:id", ...fetchUserMiddleware, userController.fetchUserById);
 userRouter.delete(
-  "/:friend_id",
+  "/friend/:friend_id",
   ...deleteFriendMiddleware,
   authMiddleware,
   userController.deleteFriend,

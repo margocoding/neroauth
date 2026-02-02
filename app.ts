@@ -15,7 +15,7 @@ export const redis = new Redis({
 });
 app.use(
   cors({
-    origin: config.node_env === "development" ? "*" : "neroteam.org",
+    origin: config.node_env === "development" ? true : "neroteam.org",
   }),
 );
 app.use(express.json());
