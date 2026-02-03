@@ -3,6 +3,7 @@ import HttpError from "../../utils/exceptions/HttpError.js";
 import type { CreateUserDto } from "./dto/create-user.dto.js";
 import { User, type IUser } from "./user.model.js";
 import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
+import { randomInt } from "node:crypto";
 
 class UserService {
   async createUser(dto: CreateUserDto): Promise<IUser> {
@@ -16,7 +17,7 @@ class UserService {
       throw HttpError.BadRequest("User with this login is already existing");
     }
 
-    const user = new User(dto);
+    const user = new User({ ...dto, inviteCode: randomInt(10000000) });
 
     return await user.save();
   }
