@@ -15,6 +15,19 @@ class AuthController {
     return res.json(result);
   }
 
+  async requestResetPassword(req: Request, res: Response): Promise<Response<SuccessRdo>> {
+    const result = await authService.requestResetPassword(req.body.email);
+
+    return res.json(result);
+  }
+
+  async resetPassword(req: Request, res: Response): Promise<Response<SuccessRdo>> {
+    const {token, password} = req.body;
+    const result = await authService.resetPassword(token, password);
+
+    return res.json(result);
+  }
+
   async checkUserByEmail(
     req: Request,
     res: Response,
