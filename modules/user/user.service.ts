@@ -4,6 +4,7 @@ import type {CreateUserDto} from "./dto/create-user.dto.js";
 import {type IUser, User} from "./user.model.js";
 import type {SuccessRdo} from "../../utils/rdo/success.rdo.js";
 import {randomInt} from "node:crypto";
+import {UserRdo} from "./rdo/user.rdo.js";
 
 class UserService {
     async createUser(dto: CreateUserDto): Promise<IUser> {
@@ -33,13 +34,15 @@ class UserService {
         }
     }
 
-    async fetchFriends(_id: Types.ObjectId, page: number = 1, pageSize: number = 15,): Promise<IUser[]> {
+    async fetchFriends(_id: Types.ObjectId, page: number = 1, pageSize: number = 15,): Promise<UserRdo[]> {
         const user = await User.findOne({_id})
-            .populate("friends", "_id login")
+            .populate("friends", "_id login inviteCode")
             .skip((page - 1) * pageSize)
             .limit(pageSize);
 
-        return (user?.friends as IUser[]) || [];
+        if(!user) throw HttpError.NotFound('User not found');
+
+        return user?.friends.map((friend: IUser) => new UserRdo(friend))
     }
 
     async deleteFriend(user_id: Types.ObjectId, friend_id: Types.ObjectId,): Promise<SuccessRdo> {
