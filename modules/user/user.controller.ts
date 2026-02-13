@@ -2,19 +2,19 @@ import type { Request, Response } from "express";
 import userService from "./user.service.js";
 import type { IUser } from "./user.model.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
-import type { UserRdo } from "./rdo/user.rdo.js";
+import { UserRdo } from "./rdo/user.rdo.js";
 import { Types } from "mongoose";
 import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
 
 class UserController {
-  async fetchUserData(req: Request, res: Response): Promise<Response<IUser>> {
+  async fetchUserData(req: Request, res: Response): Promise<Response<UserRdo>> {
     if (!req.user) {
       throw HttpError.Unauthorized();
     }
 
     const result = await userService.fetchUserById(req.user._id);
 
-    return res.json(result);
+    return res.json(new UserRdo(result));
   }
 
   async fetchUserById(req: Request, res: Response): Promise<Response<UserRdo>> {
