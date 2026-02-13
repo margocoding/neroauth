@@ -1,6 +1,5 @@
 import { body } from "express-validator";
 import validationMiddleware from "../../../middlewares/validation.middleware.js";
-import type { Types } from "mongoose";
 
 export interface LoginDto {
   email: string;
@@ -10,9 +9,15 @@ export interface LoginDto {
 export const loginMiddleware = [
   body("email")
     .notEmpty()
-    .withMessage("Email is a required field")
+    .withMessage("errors.email.required")
     .isEmail()
-    .withMessage("Wrong email format"),
-  body("password").notEmpty().isString(),
+    .withMessage("errors.email.invalid"),
+
+  body("password")
+    .notEmpty()
+    .withMessage("errors.password.required")
+    .isString()
+    .withMessage("errors.password.string"),
+
   validationMiddleware,
 ];

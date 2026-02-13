@@ -8,8 +8,9 @@ export interface CreateCodeDto {
 export const createCodeMiddleware = [
   body("email")
     .notEmpty()
-    .withMessage("Email is a required field")
+    .withMessage("errors.email.required")
     .isEmail()
-    .withMessage("Wrong email format"),
+    .withMessage("errors.email.invalid"),
+
   validationMiddleware,
 ];

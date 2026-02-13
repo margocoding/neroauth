@@ -4,8 +4,9 @@ import validationMiddleware from "../../../middlewares/validation.middleware.js"
 export const checkUserMiddleware = [
   query("email")
     .notEmpty()
-    .withMessage("email is a required field")
+    .withMessage("errors.email.required")
     .isEmail()
-    .withMessage("Wrong email format"),
+    .withMessage("errors.email.invalid"),
+
   validationMiddleware,
 ];

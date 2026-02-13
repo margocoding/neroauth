@@ -9,25 +9,27 @@ export interface RegisterDto extends CreateUserDto {
 export const registerMiddleware = [
   body("login")
     .notEmpty()
-    .withMessage("Login is a required field")
+    .withMessage("errors.login.required")
     .isString()
-    .withMessage("Login should be a string"),
+    .withMessage("errors.login.string"),
+
   body("email")
     .notEmpty()
-    .withMessage("Email is a required field")
+    .withMessage("errors.email.required")
     .isEmail()
-    .withMessage("Wrong email format"),
+    .withMessage("errors.email.invalid"),
+
   body("code")
     .notEmpty()
-    .withMessage("Code is a required field")
+    .withMessage("errors.code.required")
     .isInt({ max: 1000000 })
-    .withMessage("Wrong code format"),
+    .withMessage("errors.code.invalid"),
+
   body("password")
     .notEmpty()
-    .withMessage("Password is a required field")
+    .withMessage("errors.password.required")
     .isStrongPassword({ minLength: 8 })
-    .withMessage(
-      "Password should include digits, uppercase letters and special symbols ('@', '!', '#')",
-    ),
+    .withMessage("errors.password.weak"),
+
   validationMiddleware,
 ];
