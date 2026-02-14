@@ -25,7 +25,7 @@ class UserService {
 
     async updateUserPassword(_id: Types.ObjectId, passwordHash: string): Promise<SuccessRdo> {
         try {
-            await User.updateOne({_id}, {passwordHash});
+            await User.updateOne({_id}, {password: passwordHash});
 
             return {success: true}
         } catch (e) {
@@ -42,7 +42,7 @@ class UserService {
 
         if(!user) throw HttpError.NotFound('User not found');
 
-        return user?.friends.map((friend: IUser) => new UserRdo(friend))
+        return user?.friends.map((friend) => new UserRdo(friend as IUser))
     }
 
     async deleteFriend(user_id: Types.ObjectId, friend_id: Types.ObjectId,): Promise<SuccessRdo> {
