@@ -4,7 +4,6 @@ import {createCodeMiddleware} from "./dto/create-code.dto.js";
 import {loginMiddleware} from "./dto/login.dto.js";
 import {registerMiddleware} from "./dto/register.dto.js";
 import {checkUserMiddleware} from "./dto/check-user.dto.js";
-import {requestResetPasswordMiddleware} from "./dto/request-reset-password.dto.js";
 import {resetPasswordMiddleware} from "./dto/reset-password.dto.js";
 
 export const authRouter = Router();
@@ -13,5 +12,4 @@ authRouter.post("/create-code", ...createCodeMiddleware, authController.createCo
 authRouter.post("/register", ...registerMiddleware, authController.register);
 authRouter.post("/login", ...loginMiddleware, authController.login);
 authRouter.get("/check-email", ...checkUserMiddleware, authController.checkUserByEmail,);
-authRouter.post('/request-reset-password', ...requestResetPasswordMiddleware, authController.requestResetPassword);
 authRouter.post('/reset-password', ...resetPasswordMiddleware, authController.resetPassword);

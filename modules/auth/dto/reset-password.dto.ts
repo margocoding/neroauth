@@ -8,11 +8,12 @@ export const resetPasswordMiddleware = [
     .isStrongPassword({ minLength: 8 })
     .withMessage("errors.password.weak"),
 
-  body("token")
+  body("code")
     .notEmpty()
-    .withMessage("errors.token.required")
-    .isJWT()
-    .withMessage("errors.token.invalid"),
+    .withMessage("errors.code.required")
+    .isInt({ max: 1000000 })
+    .withMessage("errors.code.invalid"),
+  
 
   validationMiddleware,
 ];

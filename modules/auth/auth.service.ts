@@ -17,7 +17,7 @@ class AuthService {
         const {success} = await this.verifyCode(data.email, code);
 
         if (!success) {
-            throw HttpError.BadRequest("Wrong code");
+            throw HttpError.BadRequest("errors.code.invalid");
         }
 
         const passwordSalt = await bcrypt.genSalt(10, "a");
@@ -37,13 +37,13 @@ class AuthService {
         const user = await userService.fetchUserByEmail(email);
 
         if (!user) {
-            throw HttpError.Unauthorized("Wrong login or password");
+            throw HttpError.Unauthorized("errors.auth.invalid");
         }
 
         const isPasswordCompare = await bcrypt.compare(password, user.password);
 
         if (!isPasswordCompare) {
-            throw HttpError.Unauthorized("Wrong login or password");
+            throw HttpError.Unauthorized("errors.auth.invalid");
         }
 
         const token = this.generateToken(user._id);
@@ -72,7 +72,7 @@ class AuthService {
             const existingCode = JSON.parse(existingCodeString);
 
             if (Date.now() - new Date(existingCode.createdAt).getTime() < config.auth_code_resend_limit) {
-                throw HttpError.BadRequest("You can resend a code only after 2 minutes",);
+                throw HttpError.BadRequest("errors.code.resend");
             }
         }
 
@@ -90,17 +90,17 @@ class AuthService {
             const codeFoundString = await redis.get(`auth-code:${email}`);
 
             if (!codeFoundString) {
-                throw HttpError.BadRequest("Wrong code");
+                throw HttpError.BadRequest("errors.code.invalid");
             }
 
             const codeFound = JSON.parse(codeFoundString);
 
             if (code !== codeFound.code) {
-                throw HttpError.BadRequest("Wrong code");
+                throw HttpError.BadRequest("errors.code.invalid");
             }
 
             if (Date.now() - new Date(codeFound.createdAt).getTime() > config.auth_code_expire_limit) {
-                throw HttpError.BadRequest("Code has already expired");
+                throw HttpError.BadRequest("errors.code.expired");
             }
 
             return {success: true};
@@ -110,24 +110,13 @@ class AuthService {
         }
     }
 
-    async requestResetPassword(email: string): Promise<SuccessRdo> {
-        const user = await userService.fetchUserByEmail(email);
-
-        if (!user) throw HttpError.NotFound("User not found");
-
-        const token = this.generateResetPasswordToken(user._id);
-        await redis.set(`reset-password:${user._id}`, token, 'EX', config.reset_password_expire_limit);
-
-        return {success: true}
-    }
-
-    async resetPassword(token: string, password: string): Promise<SuccessRdo> {
+    async resetPassword(email: string, code: number, password: string) {
         try {
-            const verified = await this.verifyResetPasswordToken(token) as JwtPayload;
+            const verified = await this.verifyCode(email, code);
 
-            const _id = verified._id;
+            if(!verified) throw HttpError.BadRequest('errors.code.invalid')
 
-            const user = await userService.fetchUserById(_id);
+            const user = await userService.fetchUserByEmail(email);
 
             if (!user) throw HttpError.BadRequest('Wrong reset password link');
 
@@ -136,7 +125,7 @@ class AuthService {
 
             const {success} = await userService.updateUserPassword(user._id, passwordHash);
 
-            return {success};
+            return {success, user: new UserRdo(user), token: this.generateToken(user._id)};
         } catch (e) {
             console.error('Cannot reset password', e);
             throw HttpError.BadRequest('Wrong reset password link');
