@@ -6,10 +6,12 @@ import { userRouter } from "./modules/user/user.router.js";
 import { Redis } from "ioredis";
 import config from "./config/config.js";
 import cors from "cors";
-import { Api, TelegramClient as Client } from "telegram";
+import { Api, TelegramClient as Client, TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
 import { postRouter } from "./modules/post/post.router.js";
 import { helpRouter } from "./modules/help/help.router.js";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 
 export const app = express();
 
@@ -19,6 +21,7 @@ export const redis = new Redis({
 });
 
 const session = new StringSession(config.tg_session);
+
 export const client = new Client(
   session,
   +config.tg_api_id!,
