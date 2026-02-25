@@ -17,11 +17,13 @@ class InvitationService {
     const candidate = await userService.findUserByCode(code);
 
     if (!candidate) {
-      throw HttpError.NotFound("User with this code not found");
+      throw HttpError.NotFound("errors.invitation.user_not_found");
     }
 
-    if (candidate.friends.find((friend) => friend === from)) {
-      throw HttpError.BadRequest("You are already a friend");
+    if(String(candidate._id) === String(from)) throw HttpError.BadRequest('errors.invitation.self')
+
+    if (candidate.friends.find((friend) => String(friend) === String(from))) {
+      throw HttpError.BadRequest("errors.invitation.already_friend");
     }
 
     const invitationFromInitiator = await Invitation.findOne({
@@ -30,7 +32,7 @@ class InvitationService {
     });
 
     if (invitationFromInitiator)
-      throw HttpError.BadRequest("You have already had an invitation");
+      throw HttpError.BadRequest("errors.invitation.already_invited");
 
     const invitationFromCandidate = await Invitation.findOne({
       to: from,
