@@ -6,7 +6,7 @@ import HttpError from "../../utils/exceptions/HttpError.js";
 
 class PostService {
   async fetchPosts(language: ChannelLanguage) {
-    const cachedPosts = await redis.get('posts');
+    const cachedPosts = await redis.get(`posts_${language}`);
 
     if(cachedPosts) return JSON.parse(cachedPosts);
 
@@ -66,7 +66,7 @@ class PostService {
         ),
     );
 
-    await redis.set('posts', JSON.stringify(result), 'EX', config.posts_cache_lifetime);
+    await redis.set(`posts_${language}`, JSON.stringify(result), 'EX', config.posts_cache_lifetime);
 
     return result;
   }
