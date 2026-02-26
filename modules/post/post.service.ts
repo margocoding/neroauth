@@ -1,69 +1,47 @@
-import {Api} from "telegram";
-import {client, redis} from "../../app.js";
+import { Api } from "telegram";
+import { client, redis } from "../../app.js";
 import config from "../../config/config.js";
-import type {ChannelLanguage} from "./dto/fetch-posts.dto.js";
+import type { ChannelLanguage, message } from "./dto/fetch-posts.dto.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
 
 class PostService {
   async fetchPosts(language: ChannelLanguage) {
     const cachedPosts = await redis.get(`posts_${language}`);
 
-    if(cachedPosts) return JSON.parse(cachedPosts);
+    if (cachedPosts) return JSON.parse(cachedPosts);
 
-    await client.connect();
+    if (!client.connected) {
+      await client.connect();
+    }
 
     const channel = await client.getInputEntity(`@neroteam_${language}`);
     const messages: any = await client.invoke(
       new Api.messages.GetHistory({
         peer: channel,
-        limit: 9,
+        limit: config.maxTgRequestPostCount,
       }),
     );
 
+    messages.messages = messages.messages.filter((message: message) => {
+      return message.message;
+    }); // фильтруем чтоб посты имели текст, т.к. это могут быть и сервисные "посты" по типу канал закрепил пост
+    messages.messages = messages.messages.slice(0, config.maxPostsViewCount);
 
-    const result =  await Promise.all(
-        messages.messages.map(
-            async (
-                message: {
-                  id: number;
-                  message: string;
-                  date: number;
-                  media: any;
-                },
-                index: number,
-            ) => {
-              const baseMessage = {
-                id: message.id,
-                message: message.message,
-                date: new Date(message.date * 1000),
-                media: {} as {
-                  photo: { url: string; width: number; height: number };
-                },
-              };
+    const result = await Promise.all(
+      messages.messages.map(
+        async (
+          message: message,
+          index: number,
+        ) => {
+          const baseMessage = {
+            id: message.id,
+            message: message.message,
+            date: new Date(message.date * 1000),
+          };
 
-              if (message.media?.photo) {
-                try {
-                  const buffer = await client.downloadMedia(message.media.photo);
-                  const imageId = `tg-photo-${message.id}-${Date.now()}`;
-
-                  await this.cacheImage(imageId, buffer as Buffer);
-
-                  baseMessage.media.photo = {
-                    url: `/api/image/${imageId}`,
-                    width:
-                        message.media.photo.sizes?.[0]?.w || config.defaultPhotoWidth,
-                    height:
-                        message.media.photo.sizes?.[0]?.h ||
-                        config.defaultPhotoHeight,
-                  };
-                } catch (err) {
-                  console.error("Failed to download photo:", err);
-                }
-              }
-
-              return baseMessage;
-            },
-        ),
+          return baseMessage;
+        },
+      ),
     );
 
     await redis.set(`posts_${language}`, JSON.stringify(result), 'EX', config.posts_cache_lifetime);
