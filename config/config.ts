@@ -40,8 +40,8 @@ const config = {
     images: 10 * 1024 * 1024,
   },
 
-  maxTgRequestPostCount: 30,
-  maxPostsViewCount: 20,
+  maxTgRequestPostCount: 50,
+  maxPostsViewCount: 21,
 
   rateLimit: {
     enabled: true,
