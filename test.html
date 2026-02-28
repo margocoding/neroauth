@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+</head>
+
+<body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #050505;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 50px 0;">
+
+                <!-- Основной контейнер -->
+                <table role="presentation"
+                    style="width: 100%; max-width: 480px; border-collapse: collapse; background-color: #111111; border-radius: 12px; overflow: hidden; border: 1px solid #222222;">
+
+                    <!-- Шапка с градиентом -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); padding: 24px; text-align: center;">
+                            <h1
+                                style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">
+                                NERO TEAM
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Контент -->
+                    <tr>
+                        <td style="padding: 40px 30px; text-align: center;">
+
+                            <!-- Заголовок -->
+                            <h2 style="color: #ffffff; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">
+                                {{headerTitle}}
+                            </h2>
+
+                            <!-- Текст -->
+                            <p style="font-size: 15px; color: #a3a3a3; margin: 0 0 32px 0; line-height: 1.6;">
+                                {{message}}
+                            </p>
+
+                            <!-- Блок с кодом (НЕОНОВАЯ РАМКА) -->
+                            <!-- Светится box-shadow контейнера, текст внутри чистый -->
+                            <table role="presentation" style="margin: 0 auto 30px auto; border-collapse: collapse;">
+                                <tr>
+                                    <td
+                                        style="background-color: #0a0a0a; border: 2px solid #f97316; border-radius: 8px; padding: 20px 50px; text-align: center; box-shadow: 0 0 25px rgba(249, 115, 22, 0.35), inset 0 0 15px rgba(249, 115, 22, 0.1);">
+                                        <span
+                                            style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 8px; font-family: 'Courier New', monospace; line-height: 1;">
+                                            {{code}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Футер -->
+                    <tr>
+                        <td
+                            style="background-color: #0a0a0a; padding: 20px; text-align: center; border-top: 1px solid #1a1a1a;">
+                            <p style="margin: 0; font-size: 11px; color: #444444;">
+                                © 2026 Nero Team
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

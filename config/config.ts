@@ -12,7 +12,7 @@ const config = {
   auth_code_expire_limit: 15 * 60 * 1000,
   reset_password_resend_limit: 5 * 60 * 1000,
   reset_password_expire_limit: 20 * 60 * 1000,
-  posts_cache_lifetime: 1 * 60 * 60 * 1000,
+  posts_cache_lifetime: 1 * 60 * 60,
   smtp_email: process.env.SMTP_EMAIL,
   smtp_host: process.env.SMTP_HOST,
   smtp_password: process.env.SMTP_PASSWORD,
