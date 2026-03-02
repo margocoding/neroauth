@@ -6,6 +6,7 @@ export interface IUser {
   login: string;
   password: string;
   email: string;
+  avatar: string;
   inviteCode: number;
   friends: Array<IUser | Types.ObjectId>;
 }
@@ -20,6 +21,7 @@ const userSchema = new Schema<IUser>({
     unique: true,
     default: randomInt(10000000),
   },
+  avatar: {type: String, required: false},
   friends: { type: [Types.ObjectId], default: [], ref: "User" },
 });
 

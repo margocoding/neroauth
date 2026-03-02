@@ -29,6 +29,13 @@ class UserController {
     }
   }
 
+  async uploadAvatar(req: Request, res: Response): Promise<Response<string>> {
+    if(!req.file) throw HttpError.BadRequest('File is required');
+    const result = await userService.uploadAvatar(new Types.ObjectId(req.params._id as string), req.file);
+
+    return res.json(result);
+  }
+
   async fetchUserFriends(
     req: Request,
     res: Response,

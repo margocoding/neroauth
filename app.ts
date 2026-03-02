@@ -36,6 +36,7 @@ app.use(
     origin: config.node_env === "development" ? true : "neroteam.org",
   }),
 );
+app.use(express.static(import.meta.dirname))
 app.use(express.json());
 app.use("/user", userRouter);
 app.use("/auth", authRouter);
