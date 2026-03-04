@@ -3,8 +3,10 @@ import HttpError from "../../utils/exceptions/HttpError.js";
 import type {CreateUserDto} from "./dto/create-user.dto.js";
 import {type IUser, User} from "./user.model.js";
 import type {SuccessRdo} from "../../utils/rdo/success.rdo.js";
-import {randomInt} from "node:crypto";
+import {randomInt, randomUUID} from "node:crypto";
 import {UserRdo} from "./rdo/user.rdo.js";
+import storageService from "../storage/storage.service.js";
+import config from "../../config/config.js";
 
 class UserService {
     async createUser(dto: CreateUserDto): Promise<IUser> {
@@ -23,31 +25,83 @@ class UserService {
         return await user.save();
     }
 
-    async updateUserPassword(_id: Types.ObjectId, passwordHash: string): Promise<SuccessRdo> {
+    async uploadAvatar(
+        _id: Types.ObjectId,
+        file: Express.Multer.File,
+    ): Promise<string> {
+        try {
+            const user = await this.fetchUserById(_id);
+
+            if (!user) throw HttpError.BadRequest("User not found");
+
+            if (user.avatar) {
+                await this.deleteUserAvatar(user._id, user.avatar);
+            }
+
+            const fileExtension = "." + file.originalname.split(".").at(-1);
+
+            const avatarPath = await storageService.uploadFile(
+                file.buffer,
+                config.avatar_folder,
+                randomUUID() + fileExtension,
+            );
+
+            await User.updateOne({_id: user._id}, {avatar: avatarPath});
+
+            return avatarPath;
+        } catch (e) {
+            console.error("Cannot upload an avatar", e);
+            throw HttpError.BadRequest("Wrong file");
+        }
+    }
+
+    async deleteAvatar(_id: Types.ObjectId): Promise<SuccessRdo> {
+        const user = await this.fetchUserById(_id);
+        if (!user) throw HttpError.Unauthorized();
+
+        await this.deleteUserAvatar(user._id, user.avatar);
+
+        return {success: true}
+    }
+
+    async updateUserPassword(
+        _id: Types.ObjectId,
+        passwordHash: string,
+    ): Promise<SuccessRdo> {
         try {
             await User.updateOne({_id}, {password: passwordHash});
 
-            return {success: true}
+            return {success: true};
         } catch (e) {
             console.error(e);
             return {success: false};
         }
     }
 
-    async fetchFriends(_id: Types.ObjectId, page: number = 1, pageSize: number = 15,): Promise<UserRdo[]> {
+    async fetchFriends(
+        _id: Types.ObjectId,
+        page: number = 1,
+        pageSize: number = 15,
+    ): Promise<UserRdo[]> {
         const user = await User.findOne({_id})
             .populate("friends", "_id login inviteCode")
             .skip((page - 1) * pageSize)
             .limit(pageSize);
 
-        if(!user) throw HttpError.NotFound('User not found');
+        if (!user) throw HttpError.NotFound("User not found");
 
-        return user?.friends.map((friend) => new UserRdo(friend as IUser))
+        return user?.friends.map((friend) => new UserRdo(friend as IUser));
     }
 
-    async deleteFriend(user_id: Types.ObjectId, friend_id: Types.ObjectId,): Promise<SuccessRdo> {
+    async deleteFriend(
+        user_id: Types.ObjectId,
+        friend_id: Types.ObjectId,
+    ): Promise<SuccessRdo> {
         try {
-            await Promise.all([User.updateOne({_id: user_id}, {$pull: {friends: friend_id}}), User.updateOne({_id: friend_id}, {$pull: {friends: user_id}}),]);
+            await Promise.all([
+                User.updateOne({_id: user_id}, {$pull: {friends: friend_id}}),
+                User.updateOne({_id: friend_id}, {$pull: {friends: user_id}}),
+            ]);
 
             return {success: true};
         } catch (e) {
@@ -74,14 +128,38 @@ class UserService {
         return User.findOne({inviteCode: code});
     }
 
-    async addFriend(_id: Types.ObjectId, friend_id: Types.ObjectId,): Promise<SuccessRdo> {
-        await Promise.all([User.updateOne({_id}, {$addToSet: {friends: friend_id}}), User.updateOne({_id: friend_id}, {$addToSet: {friends: _id}}),]);
+    async addFriend(
+        _id: Types.ObjectId,
+        friend_id: Types.ObjectId,
+    ): Promise<SuccessRdo> {
+        await Promise.all([
+            User.updateOne({_id}, {$addToSet: {friends: friend_id}}),
+            User.updateOne({_id: friend_id}, {$addToSet: {friends: _id}}),
+        ]);
 
         return {success: true};
     }
 
     async fetchUserByEmail(email: string): Promise<IUser | null> {
         return User.findOne({email});
+    }
+
+    private async deleteUserAvatar(
+        _id: Types.ObjectId,
+        avatarPath: string,
+    ): Promise<SuccessRdo> {
+        try {
+            await storageService
+                .deleteFile(avatarPath)
+                .catch((e) => console.error("Cannot delete user avatar file", e));
+
+            await User.updateOne({_id}, {avatar: null});
+
+            return {success: true};
+        } catch (e) {
+            console.error("Cannot delete user avatar file", e);
+            return {success: false, message: "Cannot delete user avatar file"};
+        }
     }
 }
 
