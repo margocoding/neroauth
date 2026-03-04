@@ -7,12 +7,14 @@ export class UserRdo {
   email?: string;
   inviteCode?: number;
   friends!: Array<Types.ObjectId | IUser>;
+  avatar?: string;
 
   constructor(user: IUser) {
-    ((this._id = user._id),
-      (this.login = user.login),
+    this._id = user._id;
+    ((this.login = user.login),
       (this.email = user.email),
       (this.inviteCode = user.inviteCode),
       (this.friends = user.friends));
+    this.avatar = user.avatar;
   }
 }

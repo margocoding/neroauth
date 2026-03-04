@@ -12,6 +12,7 @@ import { postRouter } from "./modules/post/post.router.js";
 import { helpRouter } from "./modules/help/help.router.js";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { sessionRouter } from "./modules/session/session.router.js";
 
 export const app = express();
 
@@ -36,11 +37,12 @@ app.use(
     origin: config.node_env === "development" ? true : "neroteam.org",
   }),
 );
-app.use(express.static(import.meta.dirname))
+app.use(express.static(import.meta.dirname));
 app.use(express.json());
 app.use("/user", userRouter);
 app.use("/auth", authRouter);
 app.use("/invitation", invitationRouter);
 app.use("/posts", postRouter);
 app.use("/help", helpRouter);
+app.use("/session", sessionRouter);
 app.use(errorMiddleware);
