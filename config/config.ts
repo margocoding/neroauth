@@ -42,17 +42,20 @@ const config = {
         images: 10 * 1024 * 1024,
     },
 
-    rateLimit: {
-        enabled: true,
-        windowMs: 60 * 1000,
-        maxRequests: 200,
-    },
-    securityHeaders: {
-        "X-Content-Type-Options": "nosniff",
-        "X-Frame-Options": "DENY",
-        "X-XSS-Protection": "1; mode=block",
-        "Referrer-Policy": "strict-origin-when-cross-origin",
-    },
+  maxTgRequestPostCount: 50,
+  maxPostsViewCount: 21,
+
+  rateLimit: {
+    enabled: true,
+    windowMs: 60 * 1000,
+    maxRequests: 200,
+  },
+  securityHeaders: {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+  },
 };
 
 export default config;

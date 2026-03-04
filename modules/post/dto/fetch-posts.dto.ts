@@ -6,6 +6,12 @@ export enum ChannelLanguage {
   EN = "EN",
 }
 
+export interface message {
+  id: number;
+  message: string;
+  date: number;
+}
+
 export const fetchPostsMiddleware = [
   param("language")
     .notEmpty()
