@@ -15,6 +15,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { sessionRouter } from "./modules/session/session.router.js";
 
 export const app = express();
+app.set('trust proxy', true); 
 
 export const redis = new Redis({
   host: config.redis_host,
