@@ -1,7 +1,6 @@
 import type {Request, Response} from "express";
 import userService from "./user.service.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
-import httpError from "../../utils/exceptions/HttpError.js";
 import {UserRdo} from "./rdo/user.rdo.js";
 import {Types} from "mongoose";
 import type {SuccessRdo} from "../../utils/rdo/success.rdo.js";
@@ -37,9 +36,25 @@ class UserController {
     }
 
     async deleteAvatar(req: Request, res: Response): Promise<Response<SuccessRdo>> {
-        if (!req.user) throw httpError.Unauthorized();
+        if (!req.user) throw HttpError.Unauthorized();
 
         const result = await userService.deleteAvatar(req.user._id);
+
+        return res.json(result);
+    }
+
+    async changePassword(req: Request, res: Response): Promise<Response<SuccessRdo>> {
+        if (!req.user) throw HttpError.Unauthorized();
+
+        const result = await userService.changePassword(req.user._id, req.body.refreshToken, req.body.password, req.body.currentPassword);
+
+        return res.json(result);
+    }
+
+    async updateUser(req: Request, res: Response): Promise<Response<SuccessRdo>> {
+        if (!req.user) throw HttpError.Unauthorized();
+
+        const result = await userService.updateUser(req.user._id, req.body);
 
         return res.json(result);
     }

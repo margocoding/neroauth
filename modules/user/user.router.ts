@@ -5,6 +5,8 @@ import {fetchUserMiddleware} from "./dto/fetch-user.dto.js";
 import {fetchUserFriendsMiddleware} from "./dto/fetch-user-friends.dto.js";
 import {deleteFriendMiddleware} from "./dto/delete-friend.dto.js";
 import multer from "multer";
+import {changePasswordMiddleware} from "./dto/change-password.dto.js";
+import {updateUserMiddleware} from "./dto/update-user.dto.js";
 
 export const userRouter = Router();
 
@@ -27,6 +29,8 @@ userRouter.delete(
     authMiddleware,
     userController.deleteAvatar,
 );
+userRouter.put('/', ...updateUserMiddleware, authMiddleware, userController.updateUser);
+userRouter.put('/change-password', ...changePasswordMiddleware, authMiddleware, userController.changePassword)
 userRouter.get("/:id", ...fetchUserMiddleware, userController.fetchUserById);
 userRouter.delete(
     "/friend/:friend_id",

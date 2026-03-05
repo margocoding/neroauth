@@ -13,6 +13,9 @@ const config = {
     auth_code_expire_limit: 15 * 60 * 1000,
     reset_password_resend_limit: 5 * 60 * 1000,
     reset_password_expire_limit: 20 * 60 * 1000,
+    access_token_lifetime: 15 * 60 * 1000,
+    refresh_token_lifetime: 14 * 24 * 60 * 60 * 1000,
+    change_login_limit_seconds: 1 * 24 * 60 * 60,
     posts_cache_lifetime: 1 * 60 * 60,
     smtp_email: process.env.SMTP_EMAIL,
     smtp_host: process.env.SMTP_HOST,
@@ -42,20 +45,20 @@ const config = {
         images: 10 * 1024 * 1024,
     },
 
-  maxTgRequestPostCount: 50,
-  maxPostsViewCount: 21,
+    maxTgRequestPostCount: 50,
+    maxPostsViewCount: 21,
 
-  rateLimit: {
-    enabled: true,
-    windowMs: 60 * 1000,
-    maxRequests: 200,
-  },
-  securityHeaders: {
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-    "X-XSS-Protection": "1; mode=block",
-    "Referrer-Policy": "strict-origin-when-cross-origin",
-  },
+    rateLimit: {
+        enabled: true,
+        windowMs: 60 * 1000,
+        maxRequests: 200,
+    },
+    securityHeaders: {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+    },
 };
 
 export default config;

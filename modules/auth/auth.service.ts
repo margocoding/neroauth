@@ -170,7 +170,10 @@ class AuthService {
 
 
     generateTokens(_id: Types.ObjectId): [string, string] {
-        return [jwt.sign({_id}, config.jwt_secret), jwt.sign({_id}, config.jwt_refresh_secret)];
+        return [
+            jwt.sign({_id}, config.jwt_secret, {expiresIn: config.access_token_lifetime}),
+            jwt.sign({_id}, config.jwt_refresh_secret, {expiresIn: config.refresh_token_lifetime})
+        ];
     }
 }
 
