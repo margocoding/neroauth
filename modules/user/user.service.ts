@@ -7,6 +7,10 @@ import {randomInt, randomUUID} from "node:crypto";
 import {UserRdo} from "./rdo/user.rdo.js";
 import storageService from "../storage/storage.service.js";
 import config from "../../config/config.js";
+import bcrypt from "bcrypt";
+import sessionService from "../session/session.service.js";
+import type {UpdateUserDto} from "./dto/update-user.dto.js";
+import {redis} from "../../app.js";
 
 class UserService {
     async createUser(dto: CreateUserDto): Promise<IUser> {
@@ -84,7 +88,7 @@ class UserService {
         pageSize: number = 15,
     ): Promise<UserRdo[]> {
         const user = await User.findOne({_id})
-            .populate("friends", "_id login inviteCode")
+            .populate("friends", "_id login inviteCode avatar")
             .skip((page - 1) * pageSize)
             .limit(pageSize);
 
@@ -142,6 +146,49 @@ class UserService {
 
     async fetchUserByEmail(email: string): Promise<IUser | null> {
         return User.findOne({email});
+    }
+
+    async changePassword(_id: Types.ObjectId, refreshToken: string, password: string, currentPassword: string): Promise<SuccessRdo> {
+        const session = await sessionService.verifySession(refreshToken);
+
+        if (!session) throw HttpError.Unauthorized();
+
+        const user = await this.fetchUserById(_id);
+
+        if (!user) throw HttpError.Unauthorized();
+
+        const isPasswordCompare = await bcrypt.compare(currentPassword, user.password);
+
+        if (!isPasswordCompare) throw HttpError.BadRequest('errors.password.wrong');
+
+        if (password === currentPassword) throw HttpError.BadRequest('errors.password.same');
+
+        const passwordSalt = await bcrypt.genSalt(10, 'a');
+        const passwordHash = await bcrypt.hash(password, passwordSalt);
+
+        await Promise.all([
+            await sessionService.deleteAllSessions(user._id, session.token),
+            await User.updateOne({_id: user._id}, {password: passwordHash})
+        ]);
+
+        return {success: true};
+    }
+
+    async updateUser(_id: Types.ObjectId, data: UpdateUserDto): Promise<SuccessRdo> {
+        if (data.login) {
+
+            const hasAlreadyChangedToday = await redis.get(`change-login:${_id}`);
+            if (hasAlreadyChangedToday) throw HttpError.BadRequest('errors.login.already_changed');
+
+            const usersWithSameLogin = await User.countDocuments({login: data.login});
+            if (usersWithSameLogin > 0) throw HttpError.BadRequest('errors.login.already_exists');
+
+            await redis.set(`change-login:${_id}`, 'true', 'EX', config.change_login_limit_seconds);
+        }
+
+        const {modifiedCount} = await User.updateOne({_id}, data);
+
+        return {success: modifiedCount === 1};
     }
 
     private async deleteUserAvatar(
