@@ -2,7 +2,11 @@ import nodemailder from "nodemailer";
 import config from "../../config/config.js";
 
 class MailService {
-  async sendMail(email: string, subject: string, text: string) {
+  async sendMail(
+    email: string,
+    subject: string,
+    { text, html }: { text?: string; html?: string },
+  ) {
     const transport = nodemailder.createTransport({
       host: config.smtp_host,
       secure: true,
@@ -17,6 +21,7 @@ class MailService {
       to: email,
       subject,
       text,
+      html,
     });
     return { success: true };
   }

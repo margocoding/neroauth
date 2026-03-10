@@ -1,114 +1,124 @@
-import type {Types} from "mongoose";
+import type { Types } from "mongoose";
 import HttpError from "../../utils/exceptions/HttpError.js";
-import type {SuccessRdo} from "../../utils/rdo/success.rdo.js";
-import {SessionRdo} from "./rdo/session.rdo.js";
-import {type Device, DeviceType, type ISession, type Location, Session} from "./session.model.js";
+import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
+import { SessionRdo } from "./rdo/session.rdo.js";
+import {
+  type Device,
+  DeviceType,
+  type ISession,
+  type Location,
+  Session,
+} from "./session.model.js";
 import geoip from "geoip-lite";
-import {UAParser} from "ua-parser-js";
+import { UAParser } from "ua-parser-js";
 
 class SessionService {
-    async createSession(
-        token: string,
-        userId: Types.ObjectId,
-        location: Location,
-        device: Device,
-    ): Promise<SessionRdo> {
-        const session = new Session({
-            token,
-            user: userId,
-            location,
-            device,
-        });
+  async createSession(
+    token: string,
+    userId: Types.ObjectId,
+    location: Location,
+    device: Device,
+  ): Promise<SessionRdo> {
+    const session = new Session({
+      token,
+      user: userId,
+      location,
+      device,
+    });
 
-        const savedSession = await session.save();
+    const savedSession = await session.save();
 
-        return new SessionRdo(savedSession);
-    }
+    return new SessionRdo(savedSession);
+  }
 
-    async verifySession(token: string): Promise<ISession> {
-        const foundSession = await Session.findOne({token});
+  async verifySession(token: string): Promise<ISession> {
+    const foundSession = await Session.findOne({ token });
 
-        if (!foundSession) throw HttpError.Unauthorized();
+    if (!foundSession) throw HttpError.Unauthorized();
 
-        return Session.findByIdAndUpdate(
-            foundSession._id,
-            {lastJoin: new Date()},
-            {returnDocument: 'after'}
-        ).populate('user');
-    }
+    return Session.findByIdAndUpdate(
+      foundSession._id,
+      { lastJoin: new Date() },
+      { returnDocument: "after" },
+    ).populate("user");
+  }
 
-    async updateSessionToken(_id: Types.ObjectId, token: string): Promise<SuccessRdo> {
-        const updateData = await Session.updateOne({_id}, {token, lastJoin: new Date()});
+  async updateSessionToken(
+    _id: Types.ObjectId,
+    token: string,
+  ): Promise<SuccessRdo> {
+    const updateData = await Session.updateOne(
+      { _id },
+      { token, lastJoin: new Date() },
+    );
 
-        if (updateData.modifiedCount !== 1) throw HttpError.NotFound('Session not found');
+    if (updateData.modifiedCount !== 1)
+      throw HttpError.NotFound("Session not found");
 
-        return {success: true};
-    }
+    return { success: true };
+  }
 
-    async fetchSessions(userId: Types.ObjectId): Promise<SessionRdo[]> {
-        const sessions = await Session.find({user: userId});
+  async fetchSessions(userId: Types.ObjectId): Promise<SessionRdo[]> {
+    const sessions = await Session.find({ user: userId });
 
-        return sessions.map((session) => new SessionRdo(session));
-    }
+    return sessions.map((session) => new SessionRdo(session));
+  }
 
-    async deleteSession(
-        _id: Types.ObjectId,
-        userId: Types.ObjectId,
-    ): Promise<SuccessRdo> {
-        const session = await Session.findOne({_id, user: userId});
+  async deleteSession(
+    _id: Types.ObjectId,
+    userId: Types.ObjectId,
+  ): Promise<SuccessRdo> {
+    const session = await Session.findOne({ _id, user: userId });
 
-        if (!session) throw HttpError.NotFound("Session not found");
+    if (!session) throw HttpError.NotFound("Session not found");
 
-        await session.deleteOne({_id: session._id});
+    await session.deleteOne({ _id: session._id });
 
-        return {success: true};
-    }
+    return { success: true };
+  }
 
-    async deleteAllSessions(
-        userId: Types.ObjectId,
-        refreshToken: string,
-    ): Promise<SuccessRdo> {
-        const sessions = await Session.find({user: userId});
+  async deleteAllSessions(
+    userId: Types.ObjectId,
+    refreshToken: string,
+  ): Promise<SuccessRdo> {
+    const sessions = await Session.find({ user: userId });
 
-        if (!sessions.find(({token}) => token === refreshToken))
-            throw HttpError.BadRequest("Wrong refresh token");
+    if (!sessions.find(({ token }) => token === refreshToken))
+      throw HttpError.BadRequest("Wrong refresh token");
 
-        const sessionsForDelete = sessions.filter(
-            ({token}) => token !== refreshToken,
-        );
+    const sessionsForDelete = sessions.filter(
+      ({ token }) => token !== refreshToken,
+    );
 
-        await Session.deleteMany({
-            _id: sessionsForDelete.map(({_id}) => _id
-            ),
-        });
+    await Session.deleteMany({
+      _id: sessionsForDelete.map(({ _id }) => _id),
+    });
 
-        return {success: true};
-    }
+    return { success: true };
+  }
 
-    getLocationByIp(
-        ipAddress: string,
-    ): Location {
-        const lookup = geoip.lookup(ipAddress);
+  getLocationByIp(ipAddress: string): Location {
+    const lookup = geoip.lookup(ipAddress);
 
-        return {
-            country: lookup?.country || "Unknown country",
-            city: lookup?.city || "Unknown city",
-        };
-    }
+    return {
+      country: lookup?.country || "Unknown country",
+      city: lookup?.city || "Unknown city",
+    };
+  }
 
-    getDeviceByUserAgent(userAgent: string): Device {
-        const parser = new UAParser(userAgent);
-        const result = parser.getResult();
+  getDeviceByUserAgent(userAgent: string): Device {
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
 
-        console.log(result);
+    console.log(result);
 
-        return {
-            browser: result.browser.name || ("Chrome" as string),
-            os: result.os.name || ("iOS" as string),
-            device: result.device.model || ("iPhone" as string),
-            deviceType: result.device.type as DeviceType || DeviceType.MOBILE,
-        };
-    }
+    return {
+      browser: result.browser.name || ("Chrome" as string),
+      os: result.os.name || ("iOS" as string),
+      device: result.device.model || ("iPhone" as string),
+      deviceType: (result.device.type as DeviceType) || DeviceType.MOBILE,
+    };
+  }
 }
 
 export default new SessionService();
