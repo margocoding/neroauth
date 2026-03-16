@@ -23,7 +23,7 @@ const config = {
     redis_host: process.env.REDIS_HOST || "localhost",
     redis_port: +(process.env.REDIS_PORT || 6379),
     node_env: process.env.NODE_ENV || "development",
-    avatar_folder: '/app/uploads/avatars',
+    avatar_folder: 'avatars',
     tg_api_id: +(process.env.TG_API_ID || 0),
     tg_api_hash: process.env.TG_API_HASH,
     tg_session: process.env.TG_SESSION,
