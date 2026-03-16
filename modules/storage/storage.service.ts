@@ -11,7 +11,7 @@ class StorageService {
     const finalPath = path.join("uploads", folder, filename);
 
     fs.appendFileSync(
-      path.join(process.cwd(), `/uploads/${folder}/${filename}`),
+      path.join("/app/uploads", folder, filename),
       buffer,
     );
 
@@ -20,7 +20,7 @@ class StorageService {
 
   async deleteFile(filePath: string): Promise<SuccessRdo> {
     try {
-      const finalPath = path.join(process.cwd(), filePath);
+      const finalPath = filePath.startsWith("/") ? filePath : path.join("/app/uploads", filePath);
       fs.unlinkSync(finalPath);
 
       return { success: true };
