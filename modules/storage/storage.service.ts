@@ -20,7 +20,7 @@ class StorageService {
 
   async deleteFile(filePath: string): Promise<SuccessRdo> {
     try {
-      const finalPath = filePath.startsWith("/") ? filePath : path.join("/app/uploads", filePath);
+      const finalPath = filePath.startsWith("/") ? filePath : path.join("/app", filePath);
       fs.unlinkSync(finalPath);
 
       return { success: true };
