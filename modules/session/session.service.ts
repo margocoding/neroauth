@@ -11,6 +11,9 @@ import {
 } from "./session.model.js";
 import geoip from "geoip-lite";
 import { UAParser } from "ua-parser-js";
+import mailService from "../mail/mail.service.js";
+import userService from "../user/user.service.js";
+import { readFileSync } from "node:fs";
 
 class SessionService {
   async createSession(
@@ -27,6 +30,12 @@ class SessionService {
     });
 
     const savedSession = await session.save();
+    const user = await userService.fetchUserById(userId);
+
+    if (user) {
+      const html = readFileSync('./modules/session/mails/new-session.html', 'utf-8').replace('{country}', location.country).replace('{city}', location.city).replace('{deviceType}', device.deviceType).replace('{device}', device.device || 'PC').replace('{browser}', device.browser).replace('{os}', device.os)
+      await mailService.sendMail(user.email, 'Новый вход в аккаунт NeroAuth', { html });
+    }
 
     return new SessionRdo(savedSession);
   }
