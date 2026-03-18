@@ -1,19 +1,21 @@
-import cors from "cors";
 import express from "express";
-import { Redis } from "ioredis";
-import { TelegramClient as Client } from "telegram";
-import { StringSession } from "telegram/sessions/index.js";
-import config from "./config/config.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import { authRouter } from "./modules/auth/auth.router.js";
-import { helpRouter } from "./modules/help/help.router.js";
 import { invitationRouter } from "./modules/invitation/invitation.router.js";
-import { postRouter } from "./modules/post/post.router.js";
-import { sessionRouter } from "./modules/session/session.router.js";
 import { userRouter } from "./modules/user/user.router.js";
+import { Redis } from "ioredis";
+import config from "./config/config.js";
+import cors from "cors";
+import { Api, TelegramClient as Client, TelegramClient } from "telegram";
+import { StringSession } from "telegram/sessions/index.js";
+import { postRouter } from "./modules/post/post.router.js";
+import { helpRouter } from "./modules/help/help.router.js";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import { sessionRouter } from "./modules/session/session.router.js";
 
 export const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', true); 
 
 export const redis = new Redis({
   host: config.redis_host,
