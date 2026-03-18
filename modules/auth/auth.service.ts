@@ -42,27 +42,36 @@ class AuthService {
     async login({ email, password }: LoginDto, location: Location, device: Device): Promise<AuthRdo> {
         const user = await userService.fetchUserByEmail(email);
 
-        if (!user) {
-            throw HttpError.Unauthorized("errors.auth.invalid");
-        }
+    const user = await userService.createUser({
+      ...data,
+      password: passwordHash,
+    });
+    const [accessToken, refreshToken] = this.generateTokens(user._id);
 
-        const isPasswordCompare = await bcrypt.compare(password, user.password);
+    await sessionService.createSession(
+      refreshToken,
+      user._id,
+      location,
+      device,
+    );
 
-        if (!isPasswordCompare) {
-            throw HttpError.Unauthorized("errors.auth.invalid");
-        }
+    await redis.del(`auth-code:${user.email}`);
 
         const [accessToken, refreshToken] = this.generateTokens(user._id);
         await sessionService.createSession(refreshToken, accessToken, user._id, location, device);
 
+  async login(
+    { email, password }: LoginDto,
+    location: Location,
+    device: Device,
+  ): Promise<AuthRdo> {
+    const user = await userService.fetchUserByEmail(email);
 
-        return new AuthRdo(user, accessToken, refreshToken);
+    if (!user) {
+      throw HttpError.Unauthorized("errors.auth.invalid");
     }
 
-    async refreshToken(currentRefreshToken: string): Promise<AuthRdo> {
-        const session = await sessionService.verifySession(currentRefreshToken);
-
-        if (!session) throw HttpError.Unauthorized();
+    const isPasswordCompare = await bcrypt.compare(password, user.password);
 
         const [accessToken, refreshToken] = this.generateTokens(session.user._id);
         await sessionService.updateSessionToken(session._id, refreshToken, accessToken);
@@ -70,9 +79,13 @@ class AuthService {
         return new AuthRdo(session.user as IUser, accessToken, refreshToken);
     }
 
-    async checkUserByEmail(email: string): Promise<SuccessRdo> {
-        try {
-            const user = await userService.fetchUserByEmail(email);
+    const [accessToken, refreshToken] = this.generateTokens(user._id);
+    await sessionService.createSession(
+      refreshToken,
+      user._id,
+      location,
+      device,
+    );
 
             if (!user) return { success: false };
 
@@ -120,22 +133,17 @@ class AuthService {
         try {
             const codeFoundString = await redis.get(`auth-code:${email}`);
 
-            if (!codeFoundString) {
-                throw HttpError.BadRequest("errors.code.invalid");
-            }
+    const [accessToken, refreshToken] = this.generateTokens(session.user._id);
+    await sessionService.updateSessionToken(session._id, refreshToken);
 
-            const codeFound = JSON.parse(codeFoundString);
+    return new AuthRdo(session.user as IUser, accessToken, refreshToken);
+  }
 
-            if (code !== codeFound.code) {
-                throw HttpError.BadRequest("errors.code.invalid");
-            }
+  async checkUserByEmail(email: string): Promise<SuccessRdo> {
+    try {
+      const user = await userService.fetchUserByEmail(email);
 
-            if (
-                Date.now() - new Date(codeFound.createdAt).getTime() >
-                config.auth_code_expire_limit
-            ) {
-                throw HttpError.BadRequest("errors.code.expired");
-            }
+      if (!user) return { success: false };
 
             return { success: true };
         } catch (e) {
@@ -143,15 +151,13 @@ class AuthService {
             return { success: false };
         }
     }
+  }
 
-    async resetPassword(email: string, code: number, password: string, location: Location, device: Device): Promise<AuthRdo> {
-        const verified = await this.verifyCode(email, code);
+  async createCode(email: string): Promise<SuccessRdo> {
+    const existingCodeString = await redis.get(`auth-code:${email}`);
 
-        if (!verified) throw HttpError.BadRequest("errors.code.invalid");
-
-        const user = await userService.fetchUserByEmail(email);
-
-        if (!user) throw HttpError.BadRequest("Wrong reset password link");
+    if (existingCodeString) {
+      const existingCode = JSON.parse(existingCodeString);
 
         const passwordSalt = await bcrypt.genSalt(10, "a");
         const passwordHash = await bcrypt.hash(password, passwordSalt);
@@ -175,6 +181,53 @@ class AuthService {
             jwt.sign({ _id }, config.jwt_refresh_secret, { expiresIn: config.refresh_token_lifetime })
         ];
     }
+  }
+
+  async resetPassword(
+    email: string,
+    code: number,
+    password: string,
+    location: Location,
+    device: Device,
+  ): Promise<AuthRdo> {
+    const verified = await this.verifyCode(email, code);
+
+    if (!verified) throw HttpError.BadRequest("errors.code.invalid");
+
+    const user = await userService.fetchUserByEmail(email);
+
+    if (!user) throw HttpError.BadRequest("Wrong reset password link");
+
+    const passwordSalt = await bcrypt.genSalt(10, "a");
+    const passwordHash = await bcrypt.hash(password, passwordSalt);
+
+    const { success } = await userService.updateUserPassword(
+      user._id,
+      passwordHash,
+    );
+
+    const [accessToken, refreshToken] = this.generateTokens(user._id);
+    await sessionService.createSession(
+      refreshToken,
+      user._id,
+      location,
+      device,
+    );
+    await sessionService.deleteAllSessions(user._id, refreshToken);
+
+    return new AuthRdo(user, accessToken, refreshToken);
+  }
+
+  generateTokens(_id: Types.ObjectId): [string, string] {
+    return [
+      jwt.sign({ _id }, config.jwt_secret, {
+        expiresIn: config.access_token_lifetime,
+      }),
+      jwt.sign({ _id }, config.jwt_refresh_secret, {
+        expiresIn: config.refresh_token_lifetime,
+      }),
+    ];
+  }
 }
 
 export default new AuthService();
