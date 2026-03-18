@@ -1,23 +1,23 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import type {Types} from "mongoose";
-import {randomInt} from "node:crypto";
-import {redis} from "../../app.js";
+import type { Types } from "mongoose";
+import { randomInt } from "node:crypto";
+import { redis } from "../../app.js";
 import config from "../../config/config.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
-import type {SuccessRdo} from "../../utils/rdo/success.rdo.js";
+import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
 import mailService from "../mail/mail.service.js";
 import userService from "../user/user.service.js";
-import type {LoginDto} from "./dto/login.dto.js";
-import type {RegisterDto} from "./dto/register.dto.js";
+import type { LoginDto } from "./dto/login.dto.js";
+import type { RegisterDto } from "./dto/register.dto.js";
 import sessionService from "../session/session.service.js";
-import type {Device, Location} from "../session/session.model.js";
-import {AuthRdo} from "./rdo/auth-rdo.js";
-import type {IUser} from "../user/user.model.js";
+import type { Device, Location } from "../session/session.model.js";
+import { AuthRdo } from "./rdo/auth-rdo.js";
+import type { IUser } from "../user/user.model.js";
 
 class AuthService {
-    async register({code, ...data}: RegisterDto, location: Location, device: Device): Promise<AuthRdo> {
-        const {success} = await this.verifyCode(data.email, code);
+    async register({ code, ...data }: RegisterDto, location: Location, device: Device): Promise<AuthRdo> {
+        const { success } = await this.verifyCode(data.email, code);
 
         if (!success) {
             throw HttpError.BadRequest("errors.code.invalid");
@@ -32,14 +32,14 @@ class AuthService {
         });
         const [accessToken, refreshToken] = this.generateTokens(user._id);
 
-        await sessionService.createSession(refreshToken, user._id, location, device)
+        await sessionService.createSession(refreshToken, accessToken, user._id, location, device)
 
         await redis.del(`auth-code:${user.email}`);
 
         return new AuthRdo(user, accessToken, refreshToken);
     }
 
-    async login({email, password}: LoginDto, location: Location, device: Device): Promise<AuthRdo> {
+    async login({ email, password }: LoginDto, location: Location, device: Device): Promise<AuthRdo> {
         const user = await userService.fetchUserByEmail(email);
 
         if (!user) {
@@ -53,7 +53,7 @@ class AuthService {
         }
 
         const [accessToken, refreshToken] = this.generateTokens(user._id);
-        await sessionService.createSession(refreshToken, user._id, location, device);
+        await sessionService.createSession(refreshToken, accessToken, user._id, location, device);
 
 
         return new AuthRdo(user, accessToken, refreshToken);
@@ -65,7 +65,7 @@ class AuthService {
         if (!session) throw HttpError.Unauthorized();
 
         const [accessToken, refreshToken] = this.generateTokens(session.user._id);
-        await sessionService.updateSessionToken(session._id, refreshToken);
+        await sessionService.updateSessionToken(session._id, refreshToken, accessToken);
 
         return new AuthRdo(session.user as IUser, accessToken, refreshToken);
     }
@@ -74,11 +74,11 @@ class AuthService {
         try {
             const user = await userService.fetchUserByEmail(email);
 
-            if (!user) return {success: false};
+            if (!user) return { success: false };
 
-            return {success: true};
+            return { success: true };
         } catch (e) {
-            return {success: false};
+            return { success: false };
         }
     }
 
@@ -113,7 +113,7 @@ class AuthService {
             ),
         ]);
 
-        return {success: true};
+        return { success: true };
     }
 
     async verifyCode(email: string, code: number): Promise<SuccessRdo> {
@@ -137,10 +137,10 @@ class AuthService {
                 throw HttpError.BadRequest("errors.code.expired");
             }
 
-            return {success: true};
+            return { success: true };
         } catch (e) {
             console.error("Cannot verify an auth code", e);
-            return {success: false};
+            return { success: false };
         }
     }
 
@@ -156,13 +156,13 @@ class AuthService {
         const passwordSalt = await bcrypt.genSalt(10, "a");
         const passwordHash = await bcrypt.hash(password, passwordSalt);
 
-        const {success} = await userService.updateUserPassword(
+        const { success } = await userService.updateUserPassword(
             user._id,
             passwordHash,
         );
 
         const [accessToken, refreshToken] = this.generateTokens(user._id);
-        await sessionService.createSession(refreshToken, user._id, location, device);
+        await sessionService.createSession(refreshToken, accessToken, user._id, location, device);
         await sessionService.deleteAllSessions(user._id, refreshToken);
 
         return new AuthRdo(user, accessToken, refreshToken);
@@ -171,8 +171,8 @@ class AuthService {
 
     generateTokens(_id: Types.ObjectId): [string, string] {
         return [
-            jwt.sign({_id}, config.jwt_secret, {expiresIn: config.access_token_lifetime}),
-            jwt.sign({_id}, config.jwt_refresh_secret, {expiresIn: config.refresh_token_lifetime})
+            jwt.sign({ _id }, config.jwt_secret, { expiresIn: config.access_token_lifetime }),
+            jwt.sign({ _id }, config.jwt_refresh_secret, { expiresIn: config.refresh_token_lifetime })
         ];
     }
 }
