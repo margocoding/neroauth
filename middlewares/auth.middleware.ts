@@ -1,11 +1,10 @@
-import type { NextFunction, Request, Response } from "express";
+import type {NextFunction, Request, Response} from "express";
 import HttpError from "../utils/exceptions/HttpError.js";
-import jwt, { type JwtPayload } from "jsonwebtoken";
+import jwt, {type JwtPayload} from "jsonwebtoken";
 import config from "../config/config.js";
-import type { Types } from "mongoose";
-import sessionService from "../modules/session/session.service.js";
+import type {Types} from "mongoose";
 
-const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
 
@@ -17,9 +16,7 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
 
         const verified = jwt.verify(token, config.jwt_secret);
 
-        await sessionService.verifySessionAction(token);
-
-        req.user = { ...verified as JwtPayload } as {
+        req.user = {...verified as JwtPayload} as {
             _id: Types.ObjectId,
         };
         next();

@@ -1,5 +1,5 @@
-import { model, Schema, Types } from "mongoose";
-import { type IUser } from "../user/user.model.js";
+import {model, Schema, Types} from "mongoose";
+import {type IUser} from "../user/user.model.js";
 
 export enum DeviceType {
     CONSOLE = "console",
@@ -28,7 +28,6 @@ export interface ISession {
     _id: Types.ObjectId;
     user: Types.ObjectId | IUser;
     token: string;
-    accessToken: string;
     lastJoin: Date;
     createdAt: Date;
     location: Location;
@@ -36,18 +35,17 @@ export interface ISession {
 }
 
 const sessionSchema = new Schema<ISession>({
-    user: { type: Types.ObjectId, ref: 'User' },
-    token: { type: String, unique: true },
-    accessToken: { type: String, unique: true },
-    lastJoin: { type: Date, default: new Date() },
-    createdAt: { type: Date, default: new Date() },
+    user: {type: Types.ObjectId, ref: 'User'},
+    token: {type: String, unique: true},
+    lastJoin: {type: Date, default: new Date()},
+    createdAt: {type: Date, default: new Date()},
     device: {
-        name: { type: String },
-        deviceType: { type: String, enum: DeviceType },
-        browser: { type: String },
-        os: { type: String }
+        name: {type: String},
+        deviceType: {type: String, enum: DeviceType},
+        browser: {type: String},
+        os: {type: String}
     },
-    location: { country: { type: String }, city: { type: String } },
+    location: {country: {type: String}, city: {type: String}},
 });
 
 export const Session = model("Session", sessionSchema);
