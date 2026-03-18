@@ -1,16 +1,25 @@
-import {Router} from "express";
+import { Router } from "express";
 import userController from "./user.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
-import {fetchUserMiddleware} from "./dto/fetch-user.dto.js";
-import {fetchUserFriendsMiddleware} from "./dto/fetch-user-friends.dto.js";
-import {deleteFriendMiddleware} from "./dto/delete-friend.dto.js";
+import { fetchUserMiddleware } from "./dto/fetch-user.dto.js";
+import { fetchUserFriendsMiddleware } from "./dto/fetch-user-friends.dto.js";
+import { deleteFriendMiddleware } from "./dto/delete-friend.dto.js";
 import multer from "multer";
-import {changePasswordMiddleware} from "./dto/change-password.dto.js";
-import {updateUserMiddleware} from "./dto/update-user.dto.js";
+import { changePasswordMiddleware } from "./dto/change-password.dto.js";
+import { updateUserMiddleware } from "./dto/update-user.dto.js";
+import HttpError from "../../utils/exceptions/HttpError.js";
 
 export const userRouter = Router();
 
-const upload = multer();
+const upload = multer({
+    fileFilter(req, file, callback) {
+        if (['image/jpeg', 'image/png', 'image/gif'].includes(file.mimetype)) {
+            callback(null, true);
+        } else {
+            callback(null, false);
+        }
+    },
+});
 
 userRouter.get("/", authMiddleware, userController.fetchUserData);
 userRouter.get(
