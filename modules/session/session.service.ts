@@ -30,8 +30,7 @@ class SessionService {
     async verifySession(token: string): Promise<ISession | null> {
         const foundSession = await Session.findOne({ token });
 
-  async verifySession(token: string): Promise<ISession> {
-    const foundSession = await Session.findOne({ token });
+        if (!foundSession) throw HttpError.Unauthorized();
 
         return Session.findByIdAndUpdate(
             foundSession._id,
@@ -51,14 +50,7 @@ class SessionService {
     async updateSessionToken(_id: Types.ObjectId, token: string, accessToken: string): Promise<SuccessRdo> {
         const updateData = await Session.updateOne({ _id }, { token, accessToken, lastJoin: new Date() });
 
-  async updateSessionToken(
-    _id: Types.ObjectId,
-    token: string,
-  ): Promise<SuccessRdo> {
-    const updateData = await Session.updateOne(
-      { _id },
-      { token, lastJoin: new Date() },
-    );
+        if (updateData.modifiedCount !== 1) throw HttpError.NotFound('Session not found');
 
         return { success: true };
     }
@@ -66,8 +58,8 @@ class SessionService {
     async fetchSessions(userId: Types.ObjectId): Promise<SessionRdo[]> {
         const sessions = await Session.find({ user: userId });
 
-  async fetchSessions(userId: Types.ObjectId): Promise<SessionRdo[]> {
-    const sessions = await Session.find({ user: userId });
+        return sessions.map((session) => new SessionRdo(session));
+    }
 
     async deleteSession(
         _id: Types.ObjectId,
@@ -75,11 +67,7 @@ class SessionService {
     ): Promise<SuccessRdo> {
         const session = await Session.findOne({ _id, user: userId });
 
-  async deleteSession(
-    _id: Types.ObjectId,
-    userId: Types.ObjectId,
-  ): Promise<SuccessRdo> {
-    const session = await Session.findOne({ _id, user: userId });
+        if (!session) throw HttpError.NotFound("Session not found");
 
         await session.deleteOne({ _id: session._id });
 
@@ -107,31 +95,30 @@ class SessionService {
         return { success: true };
     }
 
-    return { success: true };
-  }
+    getLocationByIp(
+        ipAddress: string,
+    ): Location {
+        const lookup = geoip.lookup(ipAddress);
 
-  getLocationByIp(ipAddress: string): Location {
-    const lookup = geoip.lookup(ipAddress);
+        return {
+            country: lookup?.country || "Unknown country",
+            city: lookup?.city || "Unknown city",
+        };
+    }
 
-    return {
-      country: lookup?.country || "Unknown country",
-      city: lookup?.city || "Unknown city",
-    };
-  }
+    getDeviceByUserAgent(userAgent: string): Device {
+        const parser = new UAParser(userAgent);
+        const result = parser.getResult();
 
-  getDeviceByUserAgent(userAgent: string): Device {
-    const parser = new UAParser(userAgent);
-    const result = parser.getResult();
+        console.log(result);
 
-    console.log(result);
-
-    return {
-      browser: result.browser.name || ("Chrome" as string),
-      os: result.os.name || ("iOS" as string),
-      device: result.device.model || ("iPhone" as string),
-      deviceType: (result.device.type as DeviceType) || DeviceType.MOBILE,
-    };
-  }
+        return {
+            browser: result.browser.name || ("Chrome" as string),
+            os: result.os.name || ("iOS" as string),
+            device: result.device.model || ("iPhone" as string),
+            deviceType: result.device.type as DeviceType || DeviceType.MOBILE,
+        };
+    }
 }
 
 export default new SessionService();
