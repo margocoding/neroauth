@@ -9,6 +9,7 @@ import config from "../../config/config.js";
 import { InvitationType } from "./dto/fetch-invitations.dto.js";
 import { InvitationRdo } from "./rdo/invitation.rdo.js";
 import { readFileSync } from "node:fs";
+import path from "node:path";
 
 class InvitationService {
   async createInvitation(
@@ -50,6 +51,7 @@ class InvitationService {
         from,
         candidate.email,
         candidate.login,
+        candidate.avatar
       );
     }
 
@@ -88,6 +90,7 @@ class InvitationService {
       invitation.to._id,
       (invitation.to as IUser).email,
       (invitation.to as IUser).login,
+      (invitation.to as IUser).avatar
     );
   }
 
@@ -115,11 +118,18 @@ class InvitationService {
     to: Types.ObjectId,
     candidateEmail: string,
     candidateLogin: string,
+    candidateAvatar: string = '/uploads/assets/default-avatar.svg',
   ): Promise<SuccessRdo> {
+    console.log(path.join(process.cwd(), 'modules', 'invitation', 'mails', 'apply-invitation.html'));
+    const htmlFile = readFileSync(path.join(process.cwd(), 'modules', 'invitation', 'mails', 'apply-invitation.html')).toString('utf-8');
+
+
+    const html = htmlFile.replace('{avatar_url}', config.api_url + '/' + candidateAvatar).replace('{web_app_url}', config.web_app_url);
+
     await Promise.allSettled([
       userService.addFriend(from, to),
       mailService.sendMail(candidateEmail, "New friend", {
-        text: `${candidateLogin} has applied your invitation`,
+        html,
       }),
       Invitation.deleteOne({ from, to }),
     ]);
