@@ -6,6 +6,8 @@ const config = {
     port: +(process.env.PORT || 3000),
     mongo_url: process.env.MONGO_URL || "mongodb://localhost:27017",
     jwt_secret: process.env.JWT_SECRET || "Secret",
+    web_app_url: process.env.WEB_APP_URL || 'https://neroteam.org',
+    api_url: process.env.API_URL || 'https://neroteam.org/api',
     jwt_refresh_secret: process.env.JWT_REFRESH_SECRET || 'Secret',
     reset_password_jwt_secret: process.env.RESET_PASSWORD_JWT_SECRET || 'Secret',
     invitation_expire_limit: 7 * 24 * 60 * 60 * 1000,
