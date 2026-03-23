@@ -51,9 +51,24 @@ class InvitationService {
         from,
         candidate.email,
         candidate.login,
-        candidate.avatar
+        candidate.avatar,
       );
     }
+
+    const htmlFile = readFileSync(
+      path.join(
+        process.cwd(),
+        "modules",
+        "invitation",
+        "mails",
+        "new-invitation.html",
+      ),
+    ).toString("utf-8");
+
+    const html = htmlFile
+      .replace("{avatar_url}", config.api_url + "/" + candidate.avatar)
+      .replace("{web_app_url}", config.web_app_url)
+      .replace("{username}", candidate.login);
 
     await Promise.all([
       Invitation.create({ from, to: candidate._id }),
@@ -61,7 +76,7 @@ class InvitationService {
         candidate.email,
         `New friend invitation from ${candidate.login}`,
         {
-          text: `User ${candidate.login} wants to be your friend! Apply his invite in our website`,
+          html,
         },
       ),
     ]);
@@ -90,7 +105,7 @@ class InvitationService {
       invitation.to._id,
       (invitation.to as IUser).email,
       (invitation.to as IUser).login,
-      (invitation.to as IUser).avatar
+      (invitation.to as IUser).avatar,
     );
   }
 
@@ -118,13 +133,30 @@ class InvitationService {
     to: Types.ObjectId,
     candidateEmail: string,
     candidateLogin: string,
-    candidateAvatar: string = '/uploads/assets/default-avatar.svg',
+    candidateAvatar: string = "/uploads/assets/default-avatar.svg",
   ): Promise<SuccessRdo> {
-    console.log(path.join(process.cwd(), 'modules', 'invitation', 'mails', 'apply-invitation.html'));
-    const htmlFile = readFileSync(path.join(process.cwd(), 'modules', 'invitation', 'mails', 'apply-invitation.html')).toString('utf-8');
+    console.log(
+      path.join(
+        process.cwd(),
+        "modules",
+        "invitation",
+        "mails",
+        "apply-invitation.html",
+      ),
+    );
+    const htmlFile = readFileSync(
+      path.join(
+        process.cwd(),
+        "modules",
+        "invitation",
+        "mails",
+        "apply-invitation.html",
+      ),
+    ).toString("utf-8");
 
-
-    const html = htmlFile.replace('{avatar_url}', config.api_url + '/' + candidateAvatar).replace('{web_app_url}', config.web_app_url);
+    const html = htmlFile
+      .replace("{avatar_url}", config.api_url + "/" + candidateAvatar)
+      .replace("{web_app_url}", config.web_app_url);
 
     await Promise.allSettled([
       userService.addFriend(from, to),

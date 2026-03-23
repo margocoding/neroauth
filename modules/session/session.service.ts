@@ -2,123 +2,157 @@ import type { Types } from "mongoose";
 import HttpError from "../../utils/exceptions/HttpError.js";
 import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
 import { SessionRdo } from "./rdo/session.rdo.js";
-import { type Device, DeviceType, type ISession, type Location, Session } from "./session.model.js";
+import {
+  type Device,
+  DeviceType,
+  type ISession,
+  type Location,
+  Session,
+} from "./session.model.js";
 import geoip from "geoip-lite";
 import { UAParser } from "ua-parser-js";
+import { readFileSync } from "node:fs";
+import mailService from "../mail/mail.service.js";
+import userService from "../user/user.service.js";
 
 class SessionService {
-    async createSession(
-        token: string,
-        accessToken: string,
-        userId: Types.ObjectId,
-        location: Location,
-        device: Device,
-    ): Promise<SessionRdo> {
-        const session = new Session({
-            token,
-            accessToken,
-            user: userId,
-            location,
-            device,
-        });
+  async createSession(
+    token: string,
+    accessToken: string,
+    userId: Types.ObjectId,
+    location: Location,
+    device: Device,
+  ): Promise<SessionRdo> {
+    const session = new Session({
+      token,
+      accessToken,
+      user: userId,
+      location,
+      device,
+    });
 
-        const savedSession = await session.save();
+    const [savedSession, user] = await Promise.all([
+        session.save(),
+        userService.fetchUserById(userId)
+    ]);
 
-        return new SessionRdo(savedSession);
+
+    if (user) {
+      const html = readFileSync(
+        "./modules/session/mails/new-session.html",
+        "utf-8",
+      )
+        .replace("{country}", location.country)
+        .replace("{city}", location.city)
+        .replace("{deviceType}", device.deviceType)
+        .replace("{device}", device.device || "PC")
+        .replace("{browser}", device.browser)
+        .replace("{os}", device.os);
+      await mailService.sendMail(user.email, "Новый вход в аккаунт NeroAuth", {
+        html,
+      });
     }
 
-    async verifySession(token: string): Promise<ISession | null> {
-        const foundSession = await Session.findOne({ token });
+    return new SessionRdo(savedSession);
+  }
 
-        if (!foundSession) throw HttpError.Unauthorized();
+  async verifySession(token: string): Promise<ISession | null> {
+    const foundSession = await Session.findOne({ token });
 
-        return Session.findByIdAndUpdate(
-            foundSession._id,
-            { lastJoin: new Date() },
-            { returnDocument: 'after' }
-        ).populate('user');
-    }
+    if (!foundSession) throw HttpError.Unauthorized();
 
-    async verifySessionAction(accessToken: string): Promise<ISession> {
-        const foundSession = await Session.findOne({ accessToken });
+    return Session.findByIdAndUpdate(
+      foundSession._id,
+      { lastJoin: new Date() },
+      { returnDocument: "after" },
+    ).populate("user");
+  }
 
-        if (!foundSession) throw HttpError.Unauthorized();
+  async verifySessionAction(accessToken: string): Promise<ISession> {
+    const foundSession = await Session.findOne({ accessToken });
 
-        return foundSession;
-    }
+    if (!foundSession) throw HttpError.Unauthorized();
 
-    async updateSessionToken(_id: Types.ObjectId, token: string, accessToken: string): Promise<SuccessRdo> {
-        const updateData = await Session.updateOne({ _id }, { token, accessToken, lastJoin: new Date() });
+    return foundSession;
+  }
 
-        if (updateData.modifiedCount !== 1) throw HttpError.NotFound('Session not found');
+  async updateSessionToken(
+    _id: Types.ObjectId,
+    token: string,
+    accessToken: string,
+  ): Promise<SuccessRdo> {
+    const updateData = await Session.updateOne(
+      { _id },
+      { token, accessToken, lastJoin: new Date() },
+    );
 
-        return { success: true };
-    }
+    if (updateData.modifiedCount !== 1)
+      throw HttpError.NotFound("Session not found");
 
-    async fetchSessions(userId: Types.ObjectId): Promise<SessionRdo[]> {
-        const sessions = await Session.find({ user: userId });
+    return { success: true };
+  }
 
-        return sessions.map((session) => new SessionRdo(session));
-    }
+  async fetchSessions(userId: Types.ObjectId): Promise<SessionRdo[]> {
+    const sessions = await Session.find({ user: userId });
 
-    async deleteSession(
-        _id: Types.ObjectId,
-        userId: Types.ObjectId,
-    ): Promise<SuccessRdo> {
-        const session = await Session.findOne({ _id, user: userId });
+    return sessions.map((session) => new SessionRdo(session));
+  }
 
-        if (!session) throw HttpError.NotFound("Session not found");
+  async deleteSession(
+    _id: Types.ObjectId,
+    userId: Types.ObjectId,
+  ): Promise<SuccessRdo> {
+    const session = await Session.findOne({ _id, user: userId });
 
-        await session.deleteOne({ _id: session._id });
+    if (!session) throw HttpError.NotFound("Session not found");
 
-        return { success: true };
-    }
+    await session.deleteOne({ _id: session._id });
 
-    async deleteAllSessions(
-        userId: Types.ObjectId,
-        refreshToken: string,
-    ): Promise<SuccessRdo> {
-        const sessions = await Session.find({ user: userId });
+    return { success: true };
+  }
 
-        if (!sessions.find(({ token }) => token === refreshToken))
-            throw HttpError.BadRequest("Wrong refresh token");
+  async deleteAllSessions(
+    userId: Types.ObjectId,
+    refreshToken: string,
+  ): Promise<SuccessRdo> {
+    const sessions = await Session.find({ user: userId });
 
-        const sessionsForDelete = sessions.filter(
-            ({ token }) => token !== refreshToken,
-        );
+    if (!sessions.find(({ token }) => token === refreshToken))
+      throw HttpError.BadRequest("Wrong refresh token");
 
-        await Session.deleteMany({
-            _id: sessionsForDelete.map(({ _id }) => _id
-            ),
-        });
+    const sessionsForDelete = sessions.filter(
+      ({ token }) => token !== refreshToken,
+    );
 
-        return { success: true };
-    }
+    await Session.deleteMany({
+      _id: sessionsForDelete.map(({ _id }) => _id),
+    });
 
-    getLocationByIp(
-        ipAddress: string,
-    ): Location {
-        const lookup = geoip.lookup(ipAddress);
+    return { success: true };
+  }
 
-        return {
-            country: lookup?.country || "Unknown country",
-            city: lookup?.city || "Unknown city",
-        };
-    }
+  getLocationByIp(ipAddress: string): Location {
+    const lookup = geoip.lookup(ipAddress);
 
-    getDeviceByUserAgent(userAgent: string): Device {
-        const parser = new UAParser(userAgent);
-        const result = parser.getResult();
+    return {
+      country: lookup?.country || "Unknown country",
+      city: lookup?.city || "Unknown city",
+    };
+  }
 
-        console.log(result);
+  getDeviceByUserAgent(userAgent: string): Device {
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
 
-        return {
-            browser: result.browser.name || ("Chrome" as string),
-            os: result.os.name || ("iOS" as string),
-            device: result.device.model || ("iPhone" as string),
-            deviceType: result.device.type as DeviceType || DeviceType.MOBILE,
-        };
-    }
+    console.log(result);
+
+    return {
+      browser: result.browser.name || ("Chrome" as string),
+      os: result.os.name || ("iOS" as string),
+      device: result.device.model || ("iPhone" as string),
+      deviceType: (result.device.type as DeviceType) || DeviceType.MOBILE,
+    };
+  }
 }
 
 export default new SessionService();
