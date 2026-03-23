@@ -14,9 +14,14 @@ import sessionService from "../session/session.service.js";
 import type { Device, Location } from "../session/session.model.js";
 import { AuthRdo } from "./rdo/auth-rdo.js";
 import type { IUser } from "../user/user.model.js";
+import { readFileSync } from "node:fs";
 
 class AuthService {
-  async register({ code, ...data }: RegisterDto, location: Location, device: Device): Promise<AuthRdo> {
+  async register(
+    { code, ...data }: RegisterDto,
+    location: Location,
+    device: Device,
+  ): Promise<AuthRdo> {
     const { success } = await this.verifyCode(data.email, code);
 
     if (!success) {
@@ -32,14 +37,24 @@ class AuthService {
     });
     const [accessToken, refreshToken] = this.generateTokens(user._id);
 
-    await sessionService.createSession(refreshToken, accessToken, user._id, location, device)
+    await sessionService.createSession(
+      refreshToken,
+      accessToken,
+      user._id,
+      location,
+      device,
+    );
 
     await redis.del(`auth-code:${user.email}`);
 
     return new AuthRdo(user, accessToken, refreshToken);
   }
 
-  async login({ email, password }: LoginDto, location: Location, device: Device): Promise<AuthRdo> {
+  async login(
+    { email, password }: LoginDto,
+    location: Location,
+    device: Device,
+  ): Promise<AuthRdo> {
     const user = await userService.fetchUserByEmail(email);
 
     if (!user) {
@@ -53,8 +68,13 @@ class AuthService {
     }
 
     const [accessToken, refreshToken] = this.generateTokens(user._id);
-    await sessionService.createSession(refreshToken, accessToken, user._id, location, device);
-
+    await sessionService.createSession(
+      refreshToken,
+      accessToken,
+      user._id,
+      location,
+      device,
+    );
 
     return new AuthRdo(user, accessToken, refreshToken);
   }
@@ -65,7 +85,11 @@ class AuthService {
     if (!session) throw HttpError.Unauthorized();
 
     const [accessToken, refreshToken] = this.generateTokens(session.user._id);
-    await sessionService.updateSessionToken(session._id, refreshToken, accessToken);
+    await sessionService.updateSessionToken(
+      session._id,
+      refreshToken,
+      accessToken,
+    );
 
     return new AuthRdo(session.user as IUser, accessToken, refreshToken);
   }
@@ -98,12 +122,20 @@ class AuthService {
 
     const code = randomInt(1000000);
 
+    const mailHtml = readFileSync("./modules/auth/mails/code.html", "utf-8");
+    const html = mailHtml
+      .replace("{title}", "Код подтверждения")
+      .replace(
+        "{description}",
+        "На вашу почту был отправлен код подтверждения, если вы не отправляли этот код просто проигнорируйте это сообщение. Никому код не сообщайте",
+      )
+      .replace("{code}", String(code))
+      .replace("{code_title}", "Ваш код: ");
+
     await Promise.all([
-      mailService.sendMail(
-        email,
-        "Confirmation code",
-        { text: `Your confirmation code is ${code}` },
-      ),
+      mailService.sendMail(email, "Confirmation code", {
+        html,
+      }),
       redis.set(
         `auth-code:${email}`,
         JSON.stringify({
@@ -144,7 +176,13 @@ class AuthService {
     }
   }
 
-  async resetPassword(email: string, code: number, password: string, location: Location, device: Device): Promise<AuthRdo> {
+  async resetPassword(
+    email: string,
+    code: number,
+    password: string,
+    location: Location,
+    device: Device,
+  ): Promise<AuthRdo> {
     const verified = await this.verifyCode(email, code);
 
     if (!verified) throw HttpError.BadRequest("errors.code.invalid");
@@ -162,17 +200,26 @@ class AuthService {
     );
 
     const [accessToken, refreshToken] = this.generateTokens(user._id);
-    await sessionService.createSession(refreshToken, accessToken, user._id, location, device);
+    await sessionService.createSession(
+      refreshToken,
+      accessToken,
+      user._id,
+      location,
+      device,
+    );
     await sessionService.deleteAllSessions(user._id, refreshToken);
 
     return new AuthRdo(user, accessToken, refreshToken);
   }
 
-
   generateTokens(_id: Types.ObjectId): [string, string] {
     return [
-      jwt.sign({ _id }, config.jwt_secret, { expiresIn: config.access_token_lifetime }),
-      jwt.sign({ _id }, config.jwt_refresh_secret, { expiresIn: config.refresh_token_lifetime })
+      jwt.sign({ _id }, config.jwt_secret, {
+        expiresIn: config.access_token_lifetime,
+      }),
+      jwt.sign({ _id }, config.jwt_refresh_secret, {
+        expiresIn: config.refresh_token_lifetime,
+      }),
     ];
   }
 }
