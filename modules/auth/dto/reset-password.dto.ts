@@ -1,5 +1,6 @@
 import { body } from "express-validator";
 import validationMiddleware from "../../../middlewares/validation.middleware.js";
+import { localeMiddleware } from "../../../utils/dto/locale.dto.js";
 
 export const resetPasswordMiddleware = [
   body("password")
@@ -13,7 +14,8 @@ export const resetPasswordMiddleware = [
     .withMessage("errors.code.required")
     .isInt({ max: 1000000 })
     .withMessage("errors.code.invalid"),
-  
+
+  ...localeMiddleware,
 
   validationMiddleware,
 ];

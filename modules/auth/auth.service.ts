@@ -15,12 +15,14 @@ import type { Device, Location } from "../session/session.model.js";
 import { AuthRdo } from "./rdo/auth-rdo.js";
 import type { IUser } from "../user/user.model.js";
 import { readFileSync } from "node:fs";
+import i18n, { Locale } from "../../config/i18n.js";
 
 class AuthService {
   async register(
     { code, ...data }: RegisterDto,
     location: Location,
     device: Device,
+    locale: Locale
   ): Promise<AuthRdo> {
     const { success } = await this.verifyCode(data.email, code);
 
@@ -43,6 +45,7 @@ class AuthService {
       user._id,
       location,
       device,
+      locale
     );
 
     await redis.del(`auth-code:${user.email}`);
@@ -54,6 +57,7 @@ class AuthService {
     { email, password }: LoginDto,
     location: Location,
     device: Device,
+    locale: Locale
   ): Promise<AuthRdo> {
     const user = await userService.fetchUserByEmail(email);
 
@@ -74,6 +78,7 @@ class AuthService {
       user._id,
       location,
       device,
+      locale
     );
 
     return new AuthRdo(user, accessToken, refreshToken);
@@ -106,7 +111,7 @@ class AuthService {
     }
   }
 
-  async createCode(email: string): Promise<SuccessRdo> {
+  async createCode(email: string, locale: Locale): Promise<SuccessRdo> {
     const existingCodeString = await redis.get(`auth-code:${email}`);
 
     if (existingCodeString) {
@@ -124,13 +129,10 @@ class AuthService {
 
     const mailHtml = readFileSync("./modules/auth/mails/code.html", "utf-8");
     const html = mailHtml
-      .replace("{title}", "Код подтверждения")
-      .replace(
-        "{description}",
-        "На вашу почту был отправлен код подтверждения, если вы не отправляли этот код просто проигнорируйте это сообщение. Никому код не сообщайте",
-      )
+      .replace("{title}", i18n[locale].code.title)
+      .replace("{description}", i18n[locale].code.description)
       .replace("{code}", String(code))
-      .replace("{code_title}", "Ваш код: ");
+      .replace("{code_title}", i18n[locale].code.code_title);
 
     await Promise.all([
       mailService.sendMail(email, "Confirmation code", {
@@ -182,6 +184,7 @@ class AuthService {
     password: string,
     location: Location,
     device: Device,
+    locale: Locale
   ): Promise<AuthRdo> {
     const verified = await this.verifyCode(email, code);
 
@@ -206,6 +209,7 @@ class AuthService {
       user._id,
       location,
       device,
+      locale
     );
     await sessionService.deleteAllSessions(user._id, refreshToken);
 

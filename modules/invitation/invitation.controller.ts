@@ -5,16 +5,23 @@ import type { CreateInvitationDto } from "./dto/create-invitation.dto.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
 import { Types } from "mongoose";
 import type { InvitationType } from "./dto/fetch-invitations.dto.js";
+import type { Locale } from "../../config/i18n.js";
 
 class InvitationController {
   async createInvitation(
     req: Request,
     res: Response,
   ): Promise<Response<SuccessRdo>> {
+    const locale = (req.query.locale as Locale) || "en";
+
     if (!req.user) throw HttpError.Unauthorized();
 
     const { code } = req.body as CreateInvitationDto;
-    const result = await invitationService.createInvitation(req.user._id, code);
+    const result = await invitationService.createInvitation(
+      req.user._id,
+      code,
+      locale,
+    );
 
     return res.json(result);
   }
@@ -23,10 +30,13 @@ class InvitationController {
     req: Request,
     res: Response,
   ): Promise<Response<SuccessRdo>> {
+    const locale = (req.query.locale as Locale) || "en";
+
     if (!req.user) throw HttpError.Unauthorized();
 
     const result = await invitationService.applyInvitation(
       new Types.ObjectId(req.params.id as string),
+      locale,
     );
 
     return res.json(result);

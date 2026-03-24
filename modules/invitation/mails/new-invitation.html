@@ -8,16 +8,16 @@
             
             <tr>
               <td align="center" bgcolor="#ffa500" style="padding:30px; color:#111111; font-size:28px; font-weight:bold; font-family:Arial, sans-serif; border-radius: 15px;">
-                Новое приглашение в друзья
+                {title}
               </td>
             </tr>
 
             <tr>
               <td style="padding:20px; text-align:center; font-family:Arial, sans-serif; font-size:16px; color:#ffffff;">
-                <p>Пользователь <strong>{username}</strong> отправил вам приглашение в друзья.</p>
-                <p>Вы можете принять или отклонить его в своём профиле.</p>
+                <p>{description}</p>
+                <p>{subdescription}</p>
                 
-                <img src="{avatar_url}" alt="Аватар" style="border-radius: 50%; width: 80px; height: 80px; margin: 20px auto; display:block;" />
+                <img src="{avatar_url}" alt="Avatar" style="border-radius: 50%; width: 80px; height: 80px; margin: 20px auto; display:block;" />
               </td>
             </tr>
 
@@ -34,7 +34,7 @@
                     border-radius: 8px;
                     font-family: Arial, sans-serif;
                   ">
-                  Посмотреть приглашения
+                  {button}
                 </a>
               </td>
             </tr>
