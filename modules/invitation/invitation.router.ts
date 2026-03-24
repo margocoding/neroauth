@@ -3,6 +3,7 @@ import { createInvitationMiddleware } from "./dto/create-invitation.dto.js";
 import invitationController from "./invitation.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import { fetchInvitationsMiddleware } from "./dto/fetch-invitations.dto.js";
+import { applyInvitationMiddleware } from "./dto/apply-invitation.dto.js";
 
 export const invitationRouter = Router();
 
@@ -14,6 +15,7 @@ invitationRouter.post(
 );
 invitationRouter.post(
   "/apply/:id",
+  ...applyInvitationMiddleware,
   authMiddleware,
   invitationController.applyInvitation,
 );

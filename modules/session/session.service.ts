@@ -14,6 +14,8 @@ import { UAParser } from "ua-parser-js";
 import { readFileSync } from "node:fs";
 import mailService from "../mail/mail.service.js";
 import userService from "../user/user.service.js";
+import type { Locale } from "../../config/i18n.js";
+import i18n from "../../config/i18n.js";
 
 class SessionService {
   async createSession(
@@ -22,6 +24,7 @@ class SessionService {
     userId: Types.ObjectId,
     location: Location,
     device: Device,
+    locale: Locale,
   ): Promise<SessionRdo> {
     const session = new Session({
       token,
@@ -32,16 +35,20 @@ class SessionService {
     });
 
     const [savedSession, user] = await Promise.all([
-        session.save(),
-        userService.fetchUserById(userId)
+      session.save(),
+      userService.fetchUserById(userId),
     ]);
-
 
     if (user) {
       const html = readFileSync(
         "./modules/session/mails/new-session.html",
         "utf-8",
       )
+        .replace("{title}", i18n[locale].newSession.title)
+        .replace("{subtitle}", i18n[locale].newSession.subtitle)
+        .replace("{location}", i18n[locale].newSession.location)
+        .replace("{device}", i18n[locale].newSession.device)
+        .replace("{result}", i18n[locale].newSession.result)
         .replace("{country}", location.country)
         .replace("{city}", location.city)
         .replace("{deviceType}", device.deviceType)

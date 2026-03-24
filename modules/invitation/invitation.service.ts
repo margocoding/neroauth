@@ -10,11 +10,13 @@ import { InvitationType } from "./dto/fetch-invitations.dto.js";
 import { InvitationRdo } from "./rdo/invitation.rdo.js";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import i18n, { Locale } from "../../config/i18n.js";
 
 class InvitationService {
   async createInvitation(
     from: Types.ObjectId,
     code: number,
+    locale: Locale,
   ): Promise<SuccessRdo> {
     const candidate = await userService.findUserByCode(code);
 
@@ -52,6 +54,7 @@ class InvitationService {
         candidate.email,
         candidate.login,
         candidate.avatar,
+        locale
       );
     }
 
@@ -66,6 +69,10 @@ class InvitationService {
     ).toString("utf-8");
 
     const html = htmlFile
+      .replace("{title}", i18n[locale].newInvitation.title)
+      .replace("{description}", i18n[locale].newInvitation.description)
+      .replace("{subdescription}", i18n[locale].newInvitation.subdescription)
+      .replace("{button}", i18n[locale].newInvitation.button)
       .replace("{avatar_url}", config.api_url + "/" + candidate.avatar)
       .replace("{web_app_url}", config.web_app_url)
       .replace("{username}", candidate.login);
@@ -84,7 +91,7 @@ class InvitationService {
     return { success: true };
   }
 
-  async applyInvitation(invitation_id: Types.ObjectId): Promise<SuccessRdo> {
+  async applyInvitation(invitation_id: Types.ObjectId, locale: Locale): Promise<SuccessRdo> {
     const invitation = await Invitation.findOne({
       _id: invitation_id,
     })
@@ -106,6 +113,7 @@ class InvitationService {
       (invitation.to as IUser).email,
       (invitation.to as IUser).login,
       (invitation.to as IUser).avatar,
+      locale
     );
   }
 
@@ -134,6 +142,7 @@ class InvitationService {
     candidateEmail: string,
     candidateLogin: string,
     candidateAvatar: string = "/uploads/assets/default-avatar.svg",
+    locale: Locale,
   ): Promise<SuccessRdo> {
     console.log(
       path.join(
@@ -155,6 +164,10 @@ class InvitationService {
     ).toString("utf-8");
 
     const html = htmlFile
+      .replace("{title}", i18n[locale].applyInvitation.title)
+      .replace("{description}", i18n[locale].applyInvitation.description)
+      .replace("{subdescription}", i18n[locale].applyInvitation.subdescription)
+      .replace("{button}", i18n[locale].applyInvitation.button)
       .replace("{avatar_url}", config.api_url + "/" + candidateAvatar)
       .replace("{web_app_url}", config.web_app_url);
 

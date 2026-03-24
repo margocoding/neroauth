@@ -1,5 +1,6 @@
 import { body } from "express-validator";
 import validationMiddleware from "../../../middlewares/validation.middleware.js";
+import { localeMiddleware } from "../../../utils/dto/locale.dto.js";
 
 export interface LoginDto {
   email: string;
@@ -18,6 +19,7 @@ export const loginMiddleware = [
     .withMessage("errors.password.required")
     .isString()
     .withMessage("errors.password.string"),
+  ...localeMiddleware,
 
   validationMiddleware,
 ];

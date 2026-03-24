@@ -1,6 +1,7 @@
 import {body} from "express-validator";
 import validationMiddleware from "../../../middlewares/validation.middleware.js";
 import type {CreateUserDto} from "../../user/dto/create-user.dto.js";
+import { localeMiddleware } from "../../../utils/dto/locale.dto.js";
 
 export interface RegisterDto extends CreateUserDto {
     code: number;
@@ -32,6 +33,8 @@ export const registerMiddleware = [
         .withMessage("errors.password.required")
         .isStrongPassword({minLength: 8})
         .withMessage("errors.password.weak"),
+
+    ...localeMiddleware,
 
     validationMiddleware,
 ];
