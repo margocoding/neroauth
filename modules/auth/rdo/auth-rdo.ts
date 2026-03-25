@@ -10,7 +10,7 @@ export class AuthRdo {
 
     constructor(user: IUser, accessToken: string, refreshToken: string) {
         this.user = new UserRdo(user);
-        this.accessToken = { value: accessToken, expiresIn: new Date(Date.now() + config.access_token_lifetime) };
-        this.refreshToken = { value: refreshToken, expiresIn: new Date(Date.now() + config.refresh_token_lifetime) };
+        this.accessToken = { value: accessToken, expiresIn: new Date(Date.now() + (config.access_token_lifetime * 1000)) };
+        this.refreshToken = { value: refreshToken, expiresIn: new Date(Date.now() + (config.refresh_token_lifetime * 1000)) };
     }
 }
