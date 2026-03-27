@@ -19,6 +19,7 @@ class InvitationService {
     locale: Locale,
   ): Promise<SuccessRdo> {
     const candidate = await userService.findUserByCode(code);
+    const fromUser = await userService.fetchUserById(from);
 
     if (!candidate) {
       throw HttpError.NotFound("errors.invitation.user_not_found");
@@ -73,15 +74,15 @@ class InvitationService {
       .replace("{description}", i18n[locale].newInvitation.description)
       .replace("{subdescription}", i18n[locale].newInvitation.subdescription)
       .replace("{button}", i18n[locale].newInvitation.button)
-      .replace("{avatar_url}", config.api_url + "/" + candidate.avatar)
+      .replace("{avatar_url}", config.api_url + "/" + fromUser.avatar)
       .replace("{web_app_url}", config.web_app_url)
-      .replace("{username}", candidate.login);
+      .replace("{username}", fromUser.login);
 
     await Promise.all([
       Invitation.create({ from, to: candidate._id }),
       mailService.sendMail(
         candidate.email,
-        `New friend invitation from ${candidate.login}`,
+        `New friend invitation from ${fromUser.login}`,
         {
           html,
         },
@@ -110,9 +111,9 @@ class InvitationService {
     return this.processApplyingInvitation(
       invitation.from._id,
       invitation.to._id,
-      (invitation.to as IUser).email,
-      (invitation.to as IUser).login,
-      (invitation.to as IUser).avatar,
+      (invitation.from as IUser).email,
+      (invitation.from as IUser).login,
+      (invitation.from as IUser).avatar,
       locale
     );
   }
