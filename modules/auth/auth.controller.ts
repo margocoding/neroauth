@@ -42,7 +42,7 @@ class AuthController {
 
   async resetPassword(req: Request, res: Response): Promise<Response<AuthRdo>> {
     const locale = (req.query.locale as Locale) || "en";
-    console.log(req.body)
+
     const { email, password, code } = req.body;
     const location = sessionService.getLocationByIp(req.ip as string);
     const device = sessionService.getDeviceByUserAgent(
