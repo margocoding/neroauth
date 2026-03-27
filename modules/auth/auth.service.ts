@@ -153,7 +153,6 @@ class AuthService {
   async verifyCode(email: string, code: number): Promise<SuccessRdo> {
     try {
       const codeFoundString = await redis.get(`auth-code:${email}`);
-      console.log(codeFoundString, email)
 
       if (!codeFoundString) {
         throw HttpError.BadRequest("errors.code.invalid");
