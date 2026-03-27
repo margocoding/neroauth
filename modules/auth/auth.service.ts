@@ -186,9 +186,9 @@ class AuthService {
     device: Device,
     locale: Locale
   ): Promise<AuthRdo> {
-    const verified = await this.verifyCode(email, code);
+    const { success } = await this.verifyCode(email, code);
 
-    if (!verified) throw HttpError.BadRequest("errors.code.invalid");
+    if (!success) throw HttpError.BadRequest("errors.code.invalid");
 
     const user = await userService.fetchUserByEmail(email);
 
@@ -197,7 +197,7 @@ class AuthService {
     const passwordSalt = await bcrypt.genSalt(10, "a");
     const passwordHash = await bcrypt.hash(password, passwordSalt);
 
-    const { success } = await userService.updateUserPassword(
+    await userService.updateUserPassword(
       user._id,
       passwordHash,
     );
