@@ -1,7 +1,7 @@
 const i18n = {
   ru: {
     code: {
-      title: "Код подтверждения",
+      banner: "code-banner-ru.webp",
       description:
         "На вашу почту был отправлен код подтверждения, если вы не отправляли этот код просто проигнорируйте это сообщение. Никому код не сообщайте",
       code_title: "Ваш код: ",
@@ -39,7 +39,7 @@ const i18n = {
   },
   en: {
     code: {
-      title: "Verification code",
+      banner: "code-banner-en.webp",
       description:
         "Verification code have sent to your email. If you have not sent this code just ignore this message. Do not tell code anyone",
       code_title: "Your code:",
