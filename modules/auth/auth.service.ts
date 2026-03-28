@@ -135,7 +135,7 @@ class AuthService {
       .replace("{code_title}", i18n[locale].code.code_title);
 
     await Promise.all([
-      mailService.sendMail(email, "Confirmation code", {
+      mailService.sendMail(email, i18n[locale].code.title, {
         html,
       }),
       redis.set(
