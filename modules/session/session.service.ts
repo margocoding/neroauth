@@ -16,6 +16,7 @@ import mailService from "../mail/mail.service.js";
 import userService from "../user/user.service.js";
 import type { Locale } from "../../config/i18n.js";
 import i18n from "../../config/i18n.js";
+import config from "../../config/config.js";
 
 class SessionService {
   async createSession(
@@ -44,7 +45,7 @@ class SessionService {
         "./modules/session/mails/new-session.html",
         "utf-8",
       )
-        .replace("{title}", i18n[locale].newSession.title)
+        .replace("{banner}", config.api_url + "/" + i18n[locale].newSession.banner)
         .replace("{subtitle}", i18n[locale].newSession.subtitle)
         .replace("{location}", i18n[locale].newSession.location)
         .replace("{device}", i18n[locale].newSession.device)
@@ -55,7 +56,7 @@ class SessionService {
         .replace("{device}", device.device || "PC")
         .replace("{browser}", device.browser)
         .replace("{os}", device.os);
-      await mailService.sendMail(user.email, "Новый вход в аккаунт NeroAuth", {
+      await mailService.sendMail(user.email, i18n[locale].newSession.title, {
         html,
       });
     }

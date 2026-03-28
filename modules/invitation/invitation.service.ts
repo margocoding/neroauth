@@ -70,7 +70,7 @@ class InvitationService {
     ).toString("utf-8");
 
     const html = htmlFile
-      .replace("{title}", config.api_url + "/" + i18n[locale].newInvitation.title)
+      .replace("{banner}", config.api_url + "/" + i18n[locale].newInvitation.banner)
       .replace("{description}", i18n[locale].newInvitation.description)
       .replace("{subdescription}", i18n[locale].newInvitation.subdescription)
       .replace("{button}", i18n[locale].newInvitation.button)
@@ -82,7 +82,7 @@ class InvitationService {
       Invitation.create({ from, to: candidate._id }),
       mailService.sendMail(
         candidate.email,
-        `New friend invitation from ${fromUser.login}`,
+        i18n[locale].newInvitation.title,
         {
           html,
         },
@@ -165,7 +165,7 @@ class InvitationService {
     ).toString("utf-8");
 
     const html = htmlFile
-      .replace("{title}", i18n[locale].applyInvitation.title)
+      .replace("{banner}", config.api_url + "/" + i18n[locale].applyInvitation.banner)
       .replace("{description}", i18n[locale].applyInvitation.description)
       .replace("{subdescription}", i18n[locale].applyInvitation.subdescription)
       .replace("{button}", i18n[locale].applyInvitation.button)
@@ -174,7 +174,7 @@ class InvitationService {
 
     await Promise.allSettled([
       userService.addFriend(from, to),
-      mailService.sendMail(candidateEmail, "New friend", {
+      mailService.sendMail(candidateEmail, i18n[locale].applyInvitation.title, {
         html,
       }),
       Invitation.deleteOne({ from, to }),
