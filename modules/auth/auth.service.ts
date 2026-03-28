@@ -129,7 +129,7 @@ class AuthService {
 
     const mailHtml = readFileSync("./modules/auth/mails/code.html", "utf-8");
     const html = mailHtml
-      .replace("{title}", i18n[locale].code.title)
+      .replace("{banner}", i18n[locale].code.banner)
       .replace("{description}", i18n[locale].code.description)
       .replace("{code}", String(code))
       .replace("{code_title}", i18n[locale].code.code_title);
