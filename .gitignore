@@ -4,3 +4,4 @@ node_modules
 docker-compose.yaml
 
 /uploads/avatars
+/uploads/downloads/NeroTroops.*
