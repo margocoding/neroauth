@@ -8,42 +8,53 @@ import multer from "multer";
 import { changePasswordMiddleware } from "./dto/change-password.dto.js";
 import { updateUserMiddleware } from "./dto/update-user.dto.js";
 import HttpError from "../../utils/exceptions/HttpError.js";
+import config from "../../config/config.js";
 
 export const userRouter = Router();
 
 const upload = multer({
-    fileFilter(req, file, callback) {
-        if (['image/jpeg', 'image/png', 'image/gif'].includes(file.mimetype)) {
-            callback(null, true);
-        } else {
-            callback(null, false);
-        }
-    },
+  fileFilter(req, file, callback) {
+    if (["image/jpeg", "image/png", "image/gif"].includes(file.mimetype)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  limits: {
+    fileSize: config.avatar_max_size,
+  },
 });
 
 userRouter.get("/", authMiddleware, userController.fetchUserData);
 userRouter.get(
-    "/:id/friends",
-    ...fetchUserFriendsMiddleware,
-    userController.fetchUserFriends,
+  "/:id/friends",
+  ...fetchUserFriendsMiddleware,
+  userController.fetchUserFriends,
 );
 userRouter.post(
-    "/upload-avatar",
-    authMiddleware,
-    upload.single("avatar"),
-    userController.uploadAvatar,
+  "/upload-avatar",
+  authMiddleware,
+  upload.single("avatar"),
+  userController.uploadAvatar,
 );
-userRouter.delete(
-    "/avatar",
-    authMiddleware,
-    userController.deleteAvatar,
+userRouter.delete("/avatar", authMiddleware, userController.deleteAvatar);
+userRouter.put(
+  "/",
+  ...updateUserMiddleware,
+  authMiddleware,
+  userController.updateUser,
 );
-userRouter.put('/', ...updateUserMiddleware, authMiddleware, userController.updateUser);
-userRouter.put('/change-password', ...changePasswordMiddleware, authMiddleware, userController.changePassword)
+userRouter.put(
+  "/change-password",
+  ...changePasswordMiddleware,
+  authMiddleware,
+  userController.changePassword,
+);
 userRouter.get("/:id", ...fetchUserMiddleware, userController.fetchUserById);
 userRouter.delete(
-    "/friend/:friend_id",
-    ...deleteFriendMiddleware,
-    authMiddleware,
-    userController.deleteFriend,
+  "/friend/:friend_id",
+  ...deleteFriendMiddleware,
+  authMiddleware,
+  userController.deleteFriend,
 );
+userRouter.delete("/", authMiddleware, userController.deleteAccount);
