@@ -42,6 +42,20 @@ class InvitationController {
     return res.json(result);
   }
 
+  async dismissInvitation(
+    req: Request,
+    res: Response,
+  ): Promise<Response<SuccessRdo>> {
+
+    if (!req.user) throw HttpError.Unauthorized();
+
+    const result = await invitationService.dismissInvitation(
+      new Types.ObjectId(req.params.id as string)
+    );
+
+    return res.json(result);
+  }
+
   async fetchInvitations(req: Request, res: Response) {
     if (!req.user) throw HttpError.Unauthorized();
 

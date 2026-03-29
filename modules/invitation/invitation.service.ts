@@ -118,6 +118,27 @@ class InvitationService {
     );
   }
 
+  async dismissInvitation(invitation_id: Types.ObjectId): Promise<SuccessRdo> {
+    const invitation = await Invitation.findOne({
+      _id: invitation_id,
+    })
+      .populate("to", "email login _id")
+      .populate("from", "_id");
+
+    if (!invitation) throw HttpError.NotFound("Invitation not found");
+
+    if (
+      Date.now() - new Date(invitation.createdAt).getTime() >
+      config.invitation_expire_limit
+    ) {
+      await Invitation.deleteOne({ _id: invitation._id });
+      throw HttpError.BadRequest("Invitation has expired");
+    }
+
+    await Invitation.deleteOne({ from: invitation.from._id, to: invitation.to._id });
+    return { success: true, message: "Invitation is successfully deleted" };
+  }
+
   async fetchInvintations(
     userId: Types.ObjectId,
     type: InvitationType = InvitationType.INCOMING,
