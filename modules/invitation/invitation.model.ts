@@ -14,6 +14,6 @@ const invitationSchema = new Schema<IInvitation>({
   createdAt: { type: Date, default: new Date() },
 });
 
-const Invitation = model("Invatation", invitationSchema);
+const Invitation = model("Invitation", invitationSchema);
 
 export default Invitation;
