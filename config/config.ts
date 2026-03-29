@@ -35,7 +35,7 @@ const config = {
   defaultPhotoHeight: 800,
   defaultPhotoWidth: 800,
   allowedExtensions: {
-    downloads: [".apk"],
+    downloads: [".apk", ".ipa"],
     videos: [".mp4"],
     images: [".png", ".jpg", ".jpeg", ".gif", ".svg"],
   },
