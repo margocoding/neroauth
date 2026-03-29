@@ -21,8 +21,25 @@ const userSchema = new Schema<IUser>({
     unique: true,
     default: randomInt(10000000),
   },
-  avatar: {type: String, required: false},
+  avatar: { type: String, required: false },
   friends: { type: [Types.ObjectId], default: [], ref: "User" },
+});
+
+userSchema.pre("deleteOne", { document: true, query: false }, async (next) => {
+  const user: IUser = this as unknown as IUser;
+
+  if (!user) return;
+
+  await Promise.all([
+    model("Session").deleteMany({ user: user._id }),
+    model("Invitation").deleteMany({
+      $or: [{ from: user._id }, { to: user._id }],
+    }),
+    model("User").updateMany(
+      { friends: user._id },
+      { $pull: { friends: user._id } },
+    ),
+  ]);
 });
 
 export const User = model("User", userSchema);
