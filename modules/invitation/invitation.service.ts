@@ -11,6 +11,7 @@ import { InvitationRdo } from "./rdo/invitation.rdo.js";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import i18n, { Locale } from "../../config/i18n.js";
+import { PaginationRdo } from "../../utils/rdo/pagination.rdo.js";
 
 class InvitationService {
   async createInvitation(
@@ -55,7 +56,7 @@ class InvitationService {
         candidate.email,
         candidate.login,
         candidate.avatar,
-        locale
+        locale,
       );
     }
 
@@ -70,7 +71,10 @@ class InvitationService {
     ).toString("utf-8");
 
     const html = htmlFile
-      .replace("{banner}", config.api_url + "/" + i18n[locale].newInvitation.banner)
+      .replace(
+        "{banner}",
+        config.api_url + "/" + i18n[locale].newInvitation.banner,
+      )
       .replace("{description}", i18n[locale].newInvitation.description)
       .replace("{subdescription}", i18n[locale].newInvitation.subdescription)
       .replace("{button}", i18n[locale].newInvitation.button)
@@ -80,19 +84,18 @@ class InvitationService {
 
     await Promise.all([
       Invitation.create({ from, to: candidate._id }),
-      mailService.sendMail(
-        candidate.email,
-        i18n[locale].newInvitation.title,
-        {
-          html,
-        },
-      ),
+      mailService.sendMail(candidate.email, i18n[locale].newInvitation.title, {
+        html,
+      }),
     ]);
 
     return { success: true };
   }
 
-  async applyInvitation(invitation_id: Types.ObjectId, locale: Locale): Promise<SuccessRdo> {
+  async applyInvitation(
+    invitation_id: Types.ObjectId,
+    locale: Locale,
+  ): Promise<SuccessRdo> {
     const invitation = await Invitation.findOne({
       _id: invitation_id,
     })
@@ -114,7 +117,7 @@ class InvitationService {
       (invitation.from as IUser).email,
       (invitation.from as IUser).login,
       (invitation.from as IUser).avatar,
-      locale
+      locale,
     );
   }
 
@@ -135,7 +138,10 @@ class InvitationService {
       throw HttpError.BadRequest("Invitation has expired");
     }
 
-    await Invitation.deleteOne({ from: invitation.from._id, to: invitation.to._id });
+    await Invitation.deleteOne({
+      from: invitation.from._id,
+      to: invitation.to._id,
+    });
     return { success: true, message: "Invitation is successfully deleted" };
   }
 
@@ -144,18 +150,26 @@ class InvitationService {
     type: InvitationType = InvitationType.INCOMING,
     page: number = 1,
     pageSize: number = 15,
-  ): Promise<InvitationRdo[]> {
-    const invintations = await Invitation.find({
-      ...(type === InvitationType.INCOMING ? { to: userId } : { from: userId }),
-    })
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .populate(
-        type === InvitationType.INCOMING ? "from" : "to",
-        "_id login avatar",
-      );
+  ): Promise<PaginationRdo<InvitationRdo>> {
+    const where =
+      type === InvitationType.INCOMING ? { to: userId } : { from: userId };
+    const [invintations, total] = await Promise.all([
+      Invitation.find({
+        ...where,
+      })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .populate(
+          type === InvitationType.INCOMING ? "from" : "to",
+          "_id login avatar",
+        ),
+      Invitation.countDocuments({ ...where }),
+    ]);
 
-    return invintations.map((invitation) => new InvitationRdo(invitation));
+    return new PaginationRdo<InvitationRdo>(
+      total,
+      invintations.map((invitation) => new InvitationRdo(invitation)),
+    );
   }
 
   async processApplyingInvitation(
@@ -186,7 +200,10 @@ class InvitationService {
     ).toString("utf-8");
 
     const html = htmlFile
-      .replace("{banner}", config.api_url + "/" + i18n[locale].applyInvitation.banner)
+      .replace(
+        "{banner}",
+        config.api_url + "/" + i18n[locale].applyInvitation.banner,
+      )
       .replace("{description}", i18n[locale].applyInvitation.description)
       .replace("{subdescription}", i18n[locale].applyInvitation.subdescription)
       .replace("{button}", i18n[locale].applyInvitation.button)

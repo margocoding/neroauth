@@ -6,6 +6,8 @@ import HttpError from "../../utils/exceptions/HttpError.js";
 import { Types } from "mongoose";
 import type { InvitationType } from "./dto/fetch-invitations.dto.js";
 import type { Locale } from "../../config/i18n.js";
+import type { PaginationRdo } from "../../utils/rdo/pagination.rdo.js";
+import type { InvitationRdo } from "./rdo/invitation.rdo.js";
 
 class InvitationController {
   async createInvitation(
@@ -46,17 +48,19 @@ class InvitationController {
     req: Request,
     res: Response,
   ): Promise<Response<SuccessRdo>> {
-
     if (!req.user) throw HttpError.Unauthorized();
 
     const result = await invitationService.dismissInvitation(
-      new Types.ObjectId(req.params.id as string)
+      new Types.ObjectId(req.params.id as string),
     );
 
     return res.json(result);
   }
 
-  async fetchInvitations(req: Request, res: Response) {
+  async fetchInvitations(
+    req: Request,
+    res: Response,
+  ): Promise<Response<PaginationRdo<InvitationRdo>>> {
     if (!req.user) throw HttpError.Unauthorized();
 
     const result = await invitationService.fetchInvintations(

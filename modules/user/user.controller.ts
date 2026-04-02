@@ -4,6 +4,7 @@ import HttpError from "../../utils/exceptions/HttpError.js";
 import { UserRdo } from "./rdo/user.rdo.js";
 import { Types } from "mongoose";
 import type { SuccessRdo } from "../../utils/rdo/success.rdo.js";
+import type { PaginationRdo } from "../../utils/rdo/pagination.rdo.js";
 
 class UserController {
   async fetchUserData(req: Request, res: Response): Promise<Response<UserRdo>> {
@@ -73,7 +74,7 @@ class UserController {
   async fetchUserFriends(
     req: Request,
     res: Response,
-  ): Promise<Response<UserRdo[]>> {
+  ): Promise<Response<PaginationRdo<UserRdo>>> {
     try {
       const result = await userService.fetchFriends(
         new Types.ObjectId(req.params.id as string),
