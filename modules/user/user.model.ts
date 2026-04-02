@@ -25,21 +25,27 @@ const userSchema = new Schema<IUser>({
   friends: { type: [Types.ObjectId], default: [], ref: "User" },
 });
 
-userSchema.pre("deleteOne", { document: true, query: false }, async (next) => {
-  const user: IUser = this as unknown as IUser;
+userSchema.pre(
+  "deleteOne",
+  { document: false, query: true },
+  async function (next) {
+    const user = await this.model.findOne(this.getQuery());
 
-  if (!user) return;
+    console.log(user);
 
-  await Promise.all([
-    model("Session").deleteMany({ user: user._id }),
-    model("Invitation").deleteMany({
-      $or: [{ from: user._id }, { to: user._id }],
-    }),
-    model("User").updateMany(
-      { friends: user._id },
-      { $pull: { friends: user._id } },
-    ),
-  ]);
-});
+    if (!user) return;
+
+    await Promise.all([
+      model("Session").deleteMany({ user: user._id }),
+      model("Invitation").deleteMany({
+        $or: [{ from: user._id }, { to: user._id }],
+      }),
+      model("User").updateMany(
+        { friends: user._id },
+        { $pull: { friends: user._id } },
+      ),
+    ]);
+  },
+);
 
 export const User = model("User", userSchema);
