@@ -11,6 +11,7 @@ import bcrypt from "bcrypt";
 import sessionService from "../session/session.service.js";
 import type { UpdateUserDto } from "./dto/update-user.dto.js";
 import { redis } from "../../app.js";
+import { PaginationRdo } from "../../utils/rdo/pagination.rdo.js";
 
 class UserService {
   async createUser(dto: CreateUserDto): Promise<IUser> {
@@ -86,15 +87,18 @@ class UserService {
     _id: Types.ObjectId,
     page: number = 1,
     pageSize: number = 15,
-  ): Promise<UserRdo[]> {
-    const user = await User.findOne({ _id })
-      .populate("friends", "_id login inviteCode avatar")
-      .skip((page - 1) * pageSize)
-      .limit(pageSize);
+  ): Promise<PaginationRdo<UserRdo>> {
+    const [friends, total] = await Promise.all([
+      User.find({ friends: { $in: [_id] } })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize),
+      User.countDocuments({ friends: { $in: [_id] } }),
+    ]);
 
-    if (!user) throw HttpError.NotFound("User not found");
-
-    return user?.friends.map((friend) => new UserRdo(friend as IUser));
+    return new PaginationRdo<UserRdo>(
+      total,
+      friends.map((friend) => new UserRdo(friend as IUser)),
+    );
   }
 
   async deleteFriend(
