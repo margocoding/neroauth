@@ -86,7 +86,7 @@ class UserService {
   async fetchFriends(
     _id: Types.ObjectId,
     page: number = 1,
-    pageSize: number = 15,
+    pageSize: number = 200,
   ): Promise<PaginationRdo<UserRdo>> {
     const [friends, total] = await Promise.all([
       User.find({ friends: { $in: [_id] } })
