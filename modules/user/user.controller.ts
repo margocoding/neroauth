@@ -74,15 +74,28 @@ class UserController {
   async fetchUserFriends(
     req: Request,
     res: Response,
-  ): Promise<Response<PaginationRdo<UserRdo>>> {
+  ): Promise<Response<PaginationRdo<UserRdo> | UserRdo[]>> {
     try {
-      const result = await userService.fetchFriends(
-        new Types.ObjectId(req.params.id as string),
-        +(req.query.page || 1),
-        +(req.query.pageSize || 15),
-      );
+      const userId = new Types.ObjectId(req.params.id as string);
+      const page = req.query.page;
+      const pageSize = req.query.pageSize;
+      const usePagination =
+        page !== undefined &&
+        page !== "" &&
+        pageSize !== undefined &&
+        pageSize !== "";
 
-      return res.json(result);
+      if (usePagination) {
+        const result = await userService.fetchFriends(
+          userId,
+          Number(page),
+          Number(pageSize),
+        );
+        return res.json(result);
+      }
+
+      const friends = await userService.fetchAllFriends(userId);
+      return res.json(friends);
     } catch (e) {
       throw HttpError.NotFound("User not found");
     }

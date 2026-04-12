@@ -101,6 +101,11 @@ class UserService {
     );
   }
 
+  async fetchAllFriends(_id: Types.ObjectId): Promise<UserRdo[]> {
+    const friends = await User.find({ friends: { $in: [_id] } });
+    return friends.map((friend) => new UserRdo(friend as IUser));
+  }
+
   async deleteFriend(
     user_id: Types.ObjectId,
     friend_id: Types.ObjectId,
