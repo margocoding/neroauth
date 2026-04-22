@@ -20,6 +20,8 @@ const config = {
   change_login_limit_seconds: 1 * 24 * 60 * 60,
   avatar_max_size: 3 * 1024 * 1024,
   posts_cache_lifetime: 1 * 60 * 60,
+  vk_chat_id: process.env.VK_CHAT_ID || "",
+  vk_access_token: process.env.VK_ACCESS_TOKEN || "",
   smtp_email: process.env.SMTP_EMAIL,
   smtp_host: process.env.SMTP_HOST,
   smtp_password: process.env.SMTP_PASSWORD,
