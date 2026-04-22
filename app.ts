@@ -60,4 +60,7 @@ app.use("/invitation", invitationRouter);
 app.use("/posts", postRouter);
 app.use("/help", helpRouter);
 app.use("/session", sessionRouter);
+app.get('/', (req, res) => {
+  throw new Error('test error');
+})
 app.use(errorMiddleware);
