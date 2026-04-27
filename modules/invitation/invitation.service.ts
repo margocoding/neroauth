@@ -43,10 +43,7 @@ class InvitationService {
 
     const invitationFromCandidate = await Invitation.findOne({
       to: from,
-      from: candidate._id,
-      createdAt: {
-        $lt: new Date(Date.now() - config.invitation_expire_limit),
-      },
+      from: candidate._id
     });
 
     if (invitationFromCandidate) {
@@ -104,13 +101,7 @@ class InvitationService {
 
     if (!invitation) throw HttpError.NotFound("Invitation not found");
 
-    if (
-      Date.now() - new Date(invitation.createdAt).getTime() >
-      config.invitation_expire_limit
-    ) {
-      await Invitation.deleteOne({ _id: invitation._id });
-      throw HttpError.BadRequest("Invitation has expired");
-    }
+
     return this.processApplyingInvitation(
       invitation.from._id,
       invitation.to._id,
@@ -130,13 +121,6 @@ class InvitationService {
 
     if (!invitation) throw HttpError.NotFound("Invitation not found");
 
-    if (
-      Date.now() - new Date(invitation.createdAt).getTime() >
-      config.invitation_expire_limit
-    ) {
-      await Invitation.deleteOne({ _id: invitation._id });
-      throw HttpError.BadRequest("Invitation has expired");
-    }
 
     await Invitation.deleteOne({
       from: invitation.from._id,
@@ -180,15 +164,6 @@ class InvitationService {
     candidateAvatar: string = "/uploads/assets/default-avatar.svg",
     locale: Locale,
   ): Promise<SuccessRdo> {
-    console.log(
-      path.join(
-        process.cwd(),
-        "modules",
-        "invitation",
-        "mails",
-        "apply-invitation.html",
-      ),
-    );
     const htmlFile = readFileSync(
       path.join(
         process.cwd(),

@@ -10,7 +10,6 @@ const config = {
   api_url: process.env.API_URL || "https://neroteam.org/api",
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET || "Secret",
   reset_password_jwt_secret: process.env.RESET_PASSWORD_JWT_SECRET || "Secret",
-  invitation_expire_limit: 7 * 24 * 60 * 60 * 1000,
   auth_code_resend_limit: 1 * 60 * 1000,
   auth_code_expire_limit: 15 * 60 * 1000,
   reset_password_resend_limit: 5 * 60 * 1000,
