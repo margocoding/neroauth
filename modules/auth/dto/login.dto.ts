@@ -18,7 +18,9 @@ export const loginMiddleware = [
     .notEmpty()
     .withMessage("errors.password.required")
     .isString()
-    .withMessage("errors.password.string"),
+    .withMessage("errors.password.string")
+    .matches(/^[a-zA-Zа-яА-ЯёЁ\s]+$/)
+    .withMessage("errors.login.match"),
   ...localeMiddleware,
 
   validationMiddleware,
